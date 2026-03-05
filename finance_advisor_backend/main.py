@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 import uvicorn
+from app.api.v1.endpoints import market # Import market endpoint
 
 app = FastAPI(title="Virtual Finance Advisor API")
+
+app.include_router(market.router, prefix="/api/v1/market", tags="")
 
 @app.get("/")
 async def root():
