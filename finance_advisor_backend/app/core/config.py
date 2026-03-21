@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     # API Keys
     etoro_api_key: str
     etoro_user_key: str
+    etoro_base_url: str
+    etoro_env: str = "demo"
+    etoro_username: str
+
     alpha_vantage_api_key: str
     secret_key: str
 
