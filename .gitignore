@@ -1,5 +1,8 @@
 .env
+.idea
 .venv
+
+*.iml
 
 __pycache__
 
