@@ -27,14 +27,17 @@ class _ChartScreenState extends State<ChartScreen> {
   }
 
   Future<void> _fetchQuote(String symbol) async {
+    if (!mounted) return;
     setState(() => _loadingQuote = true);
     try {
       final q = await apiService.getQuote(symbol);
+      if (!mounted) return;
       setState(() {
         _quote = q;
         _loadingQuote = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loadingQuote = false);
     }
   }
@@ -100,7 +103,7 @@ class _ChartScreenState extends State<ChartScreen> {
           ),
           const SizedBox(height: 16),
           // Quote card
-          if (_quote != null) ...[
+          if (_quote != null && _quote!['price'] != null) ...[
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -133,7 +136,7 @@ class _ChartScreenState extends State<ChartScreen> {
                       Text(
                         _quote!['change_percent'] ?? '0%',
                         style: GoogleFonts.inter(
-                          color: (_quote!['change_percent'] ?? '').contains('-')
+                          color: (_quote!['change_percent'] ?? '').toString().contains('-')
                               ? const Color(0xFFF85149)
                               : const Color(0xFF3FB950),
                           fontSize: 13,
@@ -144,6 +147,11 @@ class _ChartScreenState extends State<ChartScreen> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 16),
+          ] else if (!_loadingQuote) ...[
+            const Center(
+              child: Text('Price data unavailable', style: TextStyle(color: Colors.grey)),
             ),
             const SizedBox(height: 16),
           ],
@@ -202,7 +210,7 @@ class _ChartScreenState extends State<ChartScreen> {
                               lineBarsData: [
                                 LineChartBarData(
                                   spots: _generateMockPriceHistory(
-                                      _quote?['price'] is num
+                                      (_quote != null && _quote!['price'] is num)
                                           ? (_quote!['price'] as num).toDouble()
                                           : 100.0),
                                   isCurved: true,
