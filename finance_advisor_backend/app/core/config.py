@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     alpha_vantage_api_key: str
     secret_key: str
+    google_api_key: str
 
     # Database
     database_url: str

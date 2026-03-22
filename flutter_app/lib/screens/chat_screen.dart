@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/api_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -119,11 +120,12 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           border: Border.all(color: const Color(0xFF30363D)),
         ),
-        child: Text(
-          content,
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 15,
+        child: MarkdownBody(
+          data: content,
+          styleSheet: MarkdownStyleSheet(
+            p: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+            strong: GoogleFonts.inter(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+            listBullet: GoogleFonts.inter(color: Colors.white, fontSize: 15),
           ),
         ),
       ),
