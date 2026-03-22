@@ -292,7 +292,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
-                Text('${pos.quantity} × \$${pos.currentPrice.toStringAsFixed(2)}',
+                Text('${pos.quantity.toStringAsFixed(2)} @ \$${pos.avgBuyPrice.toStringAsFixed(2)}',
                     style: GoogleFonts.inter(
                         color: const Color(0xFF8B949E), fontSize: 12)),
               ],

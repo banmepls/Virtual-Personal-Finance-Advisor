@@ -63,7 +63,8 @@ class EtoroService:
             return data
 
         # 2. Check in-memory cache
-        cached = cache_service.cache_get(PORTFOLIO_CACHE_KEY)
+        cache_key = f"etoro:portfolio:{settings.etoro_username}"
+        cached = cache_service.cache_get(cache_key)
         if cached is not None:
             logger.info("[eToro] Cache HIT for portfolio")
             return cached
@@ -72,8 +73,82 @@ class EtoroService:
         try:
             data = await self._cb.call(self._fetch_from_api)
             if "positions" in data:
-                data["positions"] = self._enrich_positions(data.get("positions", []))
-            cache_service.cache_set(PORTFOLIO_CACHE_KEY, data, PORTFOLIO_TTL)
+                # Base assumptions for the private-facing public API
+                INITIAL_TOTAL = 10000.0  # We model a $10,000 baseline
+                CASH_INITIAL = INITIAL_TOTAL * (data.get("realizedCreditPct", 73.9) / 100.0)
+                
+                aggregated = {}
+                for pos in data["positions"]:
+                    iid = pos.get("instrumentId")
+                    if iid not in aggregated:
+                        pct = pos.get("investmentPct", 0.0)
+                        np = pos.get("netProfit", 0.0)
+                        
+                        # Mathematical Projection:
+                        # 1. How much was initially invested in this asset relative to the $10k base
+                        invested = (pct / 100.0) * INITIAL_TOTAL
+                        # 2. Apply the PnL (netProfit) to find the CURRENT value in dollars
+                        current_val = invested * (1 + (np / 100.0))
+                        
+                        open_rate = pos.get("openRate", 1.0) or 1.0
+                        pos["avgBuyPrice"] = open_rate
+                        pos["currentPrice"] = open_rate * (1 + (np / 100.0))
+                        pos["currentValue"] = current_val
+                        pos["quantity"] = invested / open_rate
+                        pos["unrealizedPnL"] = current_val - invested
+                        pos["unrealizedPnLPercent"] = np
+                        
+                        # Staging for aggregation
+                        pos["_baseInvested"] = invested
+                        pos["_baseCurrent"] = current_val
+                        pos["_baseNP"] = np
+                        aggregated[iid] = pos
+                    else:
+                        exist = aggregated[iid]
+                        pct = pos.get("investmentPct", 0.0)
+                        np = pos.get("netProfit", 0.0)
+                        
+                        # Aggregate the splits
+                        invested = (pct / 100.0) * INITIAL_TOTAL
+                        current_val = invested * (1 + (np / 100.0))
+                        
+                        exist["_baseInvested"] += invested
+                        exist["_baseCurrent"] += current_val
+                        
+                        # Weighted PnL %
+                        if exist["_baseInvested"] > 0:
+                            exist["unrealizedPnLPercent"] = ((exist["_baseCurrent"] - exist["_baseInvested"]) / exist["_baseInvested"]) * 100.0
+                        
+                        exist["currentValue"] = exist["_baseCurrent"]
+                        exist["unrealizedPnL"] = exist["_baseCurrent"] - exist["_baseInvested"]
+                        
+                        # Recalculate metrics for merged position
+                        # We use openRate of the first split for display consistency or weighted avg if different
+                        open_rate = exist.get("openRate", 1.0) or 1.0
+                        exist["avgBuyPrice"] = open_rate
+                        exist["quantity"] = exist["_baseInvested"] / open_rate
+                        exist["currentPrice"] = exist["currentValue"] / exist["quantity"] if exist["quantity"] > 0 else 0.0
+                        
+                # ── Final Portfolio Totals ──
+                final_positions = list(aggregated.values())
+                current_assets_total = sum(p["currentValue"] for p in final_positions)
+                
+                # The remaining cash doesn't fluctuate with asset PnL 
+                # (but in real life eToro displays weights relative to CURRENT Total)
+                new_total_value = current_assets_total + CASH_INITIAL
+                
+                # Clean up staging fields and enrich IDs
+                for pos in final_positions:
+                    pos.pop("_baseInvested", None)
+                    pos.pop("_baseCurrent", None)
+                    pos.pop("_baseNP", None)
+                    
+                data["positions"] = self._enrich_positions(final_positions)
+                data["totalPortfolioValue"] = new_total_value
+                data["totalPnL"] = current_assets_total - (INITIAL_TOTAL - CASH_INITIAL)
+                data["totalPnLPercent"] = (data["totalPnL"] / INITIAL_TOTAL) * 100.0
+                
+            cache_service.cache_set(cache_key, data, PORTFOLIO_TTL)
             return data
         except CircuitBreakerOpen as e:
             logger.warning(f"[eToro] {e} — falling back to mock data")

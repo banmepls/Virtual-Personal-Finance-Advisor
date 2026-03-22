@@ -63,9 +63,9 @@ _INSTRUMENT_MAP: dict[int, tuple[str, str, str]] = {
     64: ("OIL",   "Crude Oil WTI",             "Commodities"),
     # Adding more common IDs found in logs/mock
     100: ("GOOG",  "Alphabet Inc. (Class C)",   "Stocks"),
-    1253: ("SMH",   "VanEck Semiconductor ETF",  "ETF"),
-    1112: ("SOXX",  "iShares Semiconductor ETF", "ETF"),
-    100003: ("ETH", "Ethereum", "Crypto"),
+    1112: ("F", "Ford Motor Company", "Stocks"),
+    1253: ("MC.PA", "LVMH Moet Hennessy Louis Vuitton SE", "Stocks"),
+    100003: ("XRP",   "Ripple",  "Crypto"),
 }
 
 # Runtime-populated cache for IDs discovered dynamically
