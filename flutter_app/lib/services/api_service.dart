@@ -70,6 +70,13 @@ class ApiService {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  Future<List<dynamic>> getStockHistory(String symbol) async {
+    final response = await http
+        .get(Uri.parse('$baseUrl/market/history/$symbol'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
   // ── Anomaly Detection ─────────────────────────────────────────────────────
   Future<Map<String, dynamic>> analyzePortfolio(
       List<Map<String, dynamic>> positions) async {

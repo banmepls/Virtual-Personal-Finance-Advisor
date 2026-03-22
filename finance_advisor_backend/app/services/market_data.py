@@ -101,6 +101,72 @@ class MarketDataService:
             logger.error(f"[MarketDataService] Error fetching {clean_symbol}: {str(e)}")
             return mock_data.mock_stock_quote(clean_symbol)
 
+    async def _fetch_history_from_api(self, symbol: str) -> list:
+        params = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": symbol,
+            "apikey": settings.alpha_vantage_api_key,
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(self.BASE_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+        
+        ts = data.get("Time Series (Daily)", {})
+        if not ts:
+            # If we get a note about API rate limit, the quota guard should have caught it, 
+            # but sometimes AV returns it in the JSON body.
+            if "Note" in data:
+                raise ValueError("Alpha Vantage rate limit reached.")
+            raise ValueError(f"No history found for {symbol}")
+
+        cache_service.av_increment_counter()
+        
+        # Sort by date and take last 30 days
+        sorted_dates = sorted(ts.keys(), reverse=True)[:30]
+        history = []
+        for d in reversed(sorted_dates):
+            history.append({
+                "date": d,
+                "price": float(ts[d]["4. close"])
+            })
+        return history
+
+    async def get_stock_history(self, symbol: str, days: int = 30) -> list:
+        """
+        Returns history for a symbol (resolves ID if needed).
+        """
+        clean_symbol = symbol.upper()
+        if clean_symbol.startswith("ID_") or clean_symbol.isdigit():
+            iid = int(clean_symbol.replace("ID_", ""))
+            resolved = instrument_resolver.resolve(iid)
+            clean_symbol = resolved["symbol"]
+
+        cache_key = f"history:{clean_symbol}"
+
+        # 1. Mock mode
+        if USE_MOCK:
+            return mock_data.mock_stock_history(clean_symbol, days)
+
+        # 2. Cache hit (History is cached for 24h as it's daily data)
+        cached = cache_service.cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        # 3. Quota guard
+        if cache_service.av_quota_exceeded():
+            logger.warning(f"[AlphaVantage] Quota exceeded for history {clean_symbol}")
+            return mock_data.mock_stock_history(clean_symbol, days)
+
+        # 4. Live API call
+        try:
+            result = await self._cb.call(lambda: self._fetch_history_from_api(clean_symbol))
+            cache_service.cache_set(cache_key, result, 86400) # 24 hours
+            return result
+        except Exception as e:
+            logger.error(f"[MarketDataService] Error history {clean_symbol}: {str(e)}")
+            return mock_data.mock_stock_history(clean_symbol, days)
+
     def quota_status(self) -> dict:
         return {
             "daily_limit": cache_service.ALPHA_VANTAGE_DAILY_LIMIT,

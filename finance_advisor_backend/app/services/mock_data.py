@@ -116,3 +116,38 @@ def mock_stock_quote(symbol: str) -> dict:
         "volume": data["volume"],
         "source": "mock",
     }
+def mock_stock_history(symbol: str, days: int = 30) -> list:
+    """
+    Generates a unique but deterministic price history for a symbol.
+    Uses the symbol string as a seed so different symbols have different waves,
+    but the same symbol always has the same wave.
+    """
+    import random
+    import math
+    
+    # Simple deterministic seed from symbol
+    seed = sum(ord(c) for c in symbol.upper())
+    rng = random.Random(seed)
+    
+    # Base price (seeded)
+    base_price = rng.uniform(50.0, 500.0)
+    history = []
+    
+    # Trend and Volatility (seeded)
+    trend = rng.uniform(-0.02, 0.02)
+    volatility = rng.uniform(0.01, 0.05)
+    
+    current = base_price
+    for i in range(days):
+        # Brownian motion-ish walk
+        change = current * (trend + rng.normalvariate(0, volatility))
+        current += change
+        # Add a sine wave for some 'texture'
+        wave = math.sin(i * 0.5) * (base_price * 0.02)
+        
+        history.append({
+            "date": (datetime.now(timezone.utc)).strftime("%Y-%m-%d"),
+            "price": round(current + wave, 2)
+        })
+        
+    return history

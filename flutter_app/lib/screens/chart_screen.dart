@@ -15,7 +15,9 @@ class ChartScreen extends StatefulWidget {
 class _ChartScreenState extends State<ChartScreen> {
   String? _selectedSymbol;
   Map<String, dynamic>? _quote;
+  List<dynamic> _history = [];
   bool _loadingQuote = false;
+  bool _loadingHistory = false;
 
   @override
   void initState() {
@@ -28,29 +30,39 @@ class _ChartScreenState extends State<ChartScreen> {
 
   Future<void> _fetchQuote(String symbol) async {
     if (!mounted) return;
-    setState(() => _loadingQuote = true);
+    setState(() {
+      _loadingQuote = true;
+      _loadingHistory = true;
+    });
     try {
+      // 1. Fetch current quote
       final q = await apiService.getQuote(symbol);
+      if (!mounted) return;
+      
+      // 2. Fetch 30-day history
+      final h = await apiService.getStockHistory(symbol);
+      
       if (!mounted) return;
       setState(() {
         _quote = q;
+        _history = h;
         _loadingQuote = false;
+        _loadingHistory = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loadingQuote = false);
+      setState(() {
+        _loadingQuote = false;
+        _loadingHistory = false;
+      });
     }
   }
 
-  List<FlSpot> _generateMockPriceHistory(double currentPrice) {
-    // Simulate a realistic 30-day price history chart
-    final rand = [
-      0.97, 0.98, 0.975, 0.99, 0.985, 1.01, 1.005, 1.02, 1.015, 0.98,
-      0.975, 0.995, 1.0, 1.025, 1.03, 1.02, 1.015, 1.01, 0.99, 0.985,
-      0.98, 0.99, 0.995, 1.0, 1.01, 1.02, 1.025, 1.03, 1.02, 1.0,
-    ];
-    return rand.asMap().entries.map((e) {
-      return FlSpot(e.key.toDouble(), currentPrice * e.value);
+  List<FlSpot> _getHistorySpots() {
+    if (_history.isEmpty) return [const FlSpot(0, 0)];
+    return _history.asMap().entries.map((e) {
+      final val = e.value['price'];
+      return FlSpot(e.key.toDouble(), (val is num) ? val.toDouble() : 0.0);
     }).toList();
   }
 
@@ -157,7 +169,7 @@ class _ChartScreenState extends State<ChartScreen> {
           ],
           // Price chart
           Expanded(
-            child: _loadingQuote
+            child: (_loadingQuote || _loadingHistory)
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF58A6FF)))
                 : Container(
                     padding: const EdgeInsets.all(16),
@@ -169,7 +181,7 @@ class _ChartScreenState extends State<ChartScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('30-Day Simulated Price History',
+                        Text('30-Day Historical Trend',
                             style: GoogleFonts.inter(
                                 color: const Color(0xFF8B949E), fontSize: 12)),
                         const SizedBox(height: 12),
@@ -209,10 +221,7 @@ class _ChartScreenState extends State<ChartScreen> {
                               borderData: FlBorderData(show: false),
                               lineBarsData: [
                                 LineChartBarData(
-                                  spots: _generateMockPriceHistory(
-                                      (_quote != null && _quote!['price'] is num)
-                                          ? (_quote!['price'] as num).toDouble()
-                                          : 100.0),
+                                  spots: _getHistorySpots(),
                                   isCurved: true,
                                   color: const Color(0xFF58A6FF),
                                   barWidth: 2,

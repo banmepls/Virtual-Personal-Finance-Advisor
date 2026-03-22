@@ -15,3 +15,13 @@ async def get_quote(symbol: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Market data error: {str(e)}")
+
+@router.get("/history/{symbol}")
+async def get_history(symbol: str):
+    try:
+        data = await market_service.get_stock_history(symbol)
+        return data
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Market history error: {str(e)}")
