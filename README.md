@@ -16,7 +16,7 @@ cd finance_advisor_backend
 # Ensure .env is populated with mock mode on:
 # USE_MOCK_DATA=true
 pip install -r ../requirements.txt
-uvicorn main:app --reload --loop uvloop
+uvicorn main:app --reload --host 0.0.0.0 --port 8000 --loop uvloop
 ```
 
 ### 2. Flutter App Setup
