@@ -65,6 +65,7 @@ _INSTRUMENT_MAP: dict[int, tuple[str, str, str]] = {
     100: ("GOOG",  "Alphabet Inc. (Class C)",   "Stocks"),
     1253: ("SMH",   "VanEck Semiconductor ETF",  "ETF"),
     1112: ("SOXX",  "iShares Semiconductor ETF", "ETF"),
+    100003: ("ETH", "Ethereum", "Crypto"),
 }
 
 # Runtime-populated cache for IDs discovered dynamically
