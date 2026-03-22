@@ -74,6 +74,13 @@ def cache_set(key: str, value: Any, ttl_seconds: float = 300):
     logger.debug(f"[Cache] SET {key} (TTL {ttl_seconds}s)")
 
 
+def cache_clear():
+    """Wipe the entire in-memory cache."""
+    global _lru
+    _lru = _InMemoryLRU()
+    logger.info("[Cache] In-memory cache cleared.")
+
+
 def cache_stats() -> dict:
     return _lru.stats()
 

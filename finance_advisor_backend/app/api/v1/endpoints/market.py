@@ -1,8 +1,14 @@
 from fastapi import APIRouter, HTTPException
 from app.services.market_data import MarketDataService
+from app.services import cache_service
 
 router = APIRouter()
 market_service = MarketDataService()
+
+@router.get("/flush")
+async def flush_cache():
+    cache_service.cache_clear()
+    return {"status": "Cache flushed"}
 
 @router.get("/quote/{symbol}")
 async def get_quote(symbol: str):

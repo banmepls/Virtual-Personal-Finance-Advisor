@@ -136,14 +136,15 @@ def mock_stock_history(symbol: str, days: int = 30) -> list:
     # Trend and Volatility (seeded)
     trend = rng.uniform(-0.02, 0.02)
     volatility = rng.uniform(0.01, 0.05)
+    sin_offset = rng.uniform(0, 6.28) # Random start for sine wave
     
     current = base_price
     for i in range(days):
         # Brownian motion-ish walk
         change = current * (trend + rng.normalvariate(0, volatility))
         current += change
-        # Add a sine wave for some 'texture'
-        wave = math.sin(i * 0.5) * (base_price * 0.02)
+        # Add a sine wave for some 'texture' - now with unique offset
+        wave = math.sin(i * 0.5 + sin_offset) * (base_price * 0.02)
         
         history.append({
             "date": (datetime.now(timezone.utc)).strftime("%Y-%m-%d"),

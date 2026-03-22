@@ -72,6 +72,18 @@ _INSTRUMENT_MAP: dict[int, tuple[str, str, str]] = {
 _runtime_cache: dict[int, dict] = {}
 
 
+def is_mapped(instrument_id: int) -> bool:
+    """Check if we have a real mapping for this ID (static or runtime)."""
+    return instrument_id in _INSTRUMENT_MAP or (
+        instrument_id in _runtime_cache and _runtime_cache[instrument_id]["asset_class"] != "Unknown"
+    )
+
+
+def is_seen(instrument_id: int) -> bool:
+    """Check if we have already encountered this ID in this session."""
+    return instrument_id in _INSTRUMENT_MAP or instrument_id in _runtime_cache
+
+
 def resolve(instrument_id: int) -> dict:
     """
     Resolve a numeric eToro instrument_id to human-readable info.

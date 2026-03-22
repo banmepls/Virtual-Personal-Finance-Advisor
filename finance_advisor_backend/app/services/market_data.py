@@ -102,20 +102,31 @@ class MarketDataService:
             return mock_data.mock_stock_quote(clean_symbol)
 
     async def _fetch_history_from_api(self, symbol: str) -> list:
+        # Determine if it's crypto (XRP, BTC, ETH are common)
+        is_crypto = symbol.upper() in ["XRP", "BTC", "ETH", "SOL"]
+        
         params = {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": symbol,
             "apikey": settings.alpha_vantage_api_key,
         }
+        
+        if is_crypto:
+            params["function"] = "DIGITAL_CURRENCY_DAILY"
+            params["symbol"] = symbol.upper()
+            params["market"] = "USD"
+        else:
+            params["function"] = "TIME_SERIES_DAILY"
+            params["symbol"] = symbol.upper()
+            
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(self.BASE_URL, params=params)
             response.raise_for_status()
             data = response.json()
         
-        ts = data.get("Time Series (Daily)", {})
+        # Crypto root is different
+        root_key = "Time Series (Digital Currency Daily)" if is_crypto else "Time Series (Daily)"
+        ts = data.get(root_key, {})
+        
         if not ts:
-            # If we get a note about API rate limit, the quota guard should have caught it, 
-            # but sometimes AV returns it in the JSON body.
             if "Note" in data:
                 raise ValueError("Alpha Vantage rate limit reached.")
             raise ValueError(f"No history found for {symbol}")
@@ -125,10 +136,13 @@ class MarketDataService:
         # Sort by date and take last 30 days
         sorted_dates = sorted(ts.keys(), reverse=True)[:30]
         history = []
+        # Price key is also different for crypto (4a. close (USD) or similar)
+        price_key = "4a. close (USD)" if is_crypto else "4. close"
+        
         for d in reversed(sorted_dates):
             history.append({
                 "date": d,
-                "price": float(ts[d]["4. close"])
+                "price": float(ts[d][price_key])
             })
         return history
 
