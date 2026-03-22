@@ -26,3 +26,18 @@ class User(Base):
     anomaly_logs: Mapped[list["AnomalyLog"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+
+    @property
+    def etoro_key(self) -> str | None:
+        if self.encrypted_etoro_key:
+            from app.core.security import decrypt_field
+            return decrypt_field(self.encrypted_etoro_key)
+        return None
+
+    @etoro_key.setter
+    def etoro_key(self, value: str | None):
+        if value:
+            from app.core.security import encrypt_field
+            self.encrypted_etoro_key = encrypt_field(value)
+        else:
+            self.encrypted_etoro_key = None

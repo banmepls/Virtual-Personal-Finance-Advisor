@@ -3,8 +3,8 @@ app/agent/tori_agent.py
 -----------------------
 Updated to use the newest langchain-mcp-adapters API.
 """
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from app.mcp.server import mcp_server
 from app.core.config import get_settings
@@ -12,8 +12,8 @@ from app.core.config import get_settings
 settings = get_settings()
 
 def create_tori_agent(user_id: int):
-    # Initialize LLM
-    llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
+    # Initialize LLM with Google Gemini
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
 
     # Use the tools directly from our FastMCP server
     # FastMCP tools can be converted to LangChain tools easily
@@ -49,7 +49,7 @@ def create_tori_agent(user_id: int):
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    agent = create_openai_functions_agent(llm, tools, prompt)
+    agent = create_tool_calling_agent(llm, tools, prompt)
     executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return executor
 

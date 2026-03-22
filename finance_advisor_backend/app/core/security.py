@@ -55,17 +55,16 @@ def verify_token(token: str) -> dict[str, Any] | None:
 # ── AES-256-GCM Field Encryption ─────────────────────────────────────────────
 def _get_aes_key() -> bytes:
     """
-    Derives a 32-byte AES key from SECRET_KEY.
-    In production this would be fetched from HashiCorp Vault.
+    Derives a 32-byte AES key from HashiCorp Vault.
     """
-    raw = settings.secret_key.encode()
-    # secret_key is 64 hex chars = 32 bytes when decoded
-    try:
-        key = bytes.fromhex(settings.secret_key)[:32]
-    except ValueError:
-        # Fallback: use raw bytes padded/trimmed to 32 bytes
-        key = (raw * 2)[:32]
-    return key
+    from app.core.vault import get_master_key
+    b64_key = get_master_key()
+    if not b64_key:
+        raise ValueError("Vault master key not found!")
+    
+    # ensure it's exactly 32 bytes for AES-256
+    raw_key = base64.urlsafe_b64decode(b64_key)
+    return raw_key[:32].ljust(32, b'\0')
 
 
 def encrypt_field(plaintext: str) -> str:

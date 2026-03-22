@@ -28,10 +28,11 @@ async def chat_with_tori(request: ChatRequest, db: AsyncSession = Depends(get_db
     """
     # 1. Fetch recent history
     history_objs = await get_chat_history(db, request.user_id)
-    # Convert to LangChain format (simple tuple list for now)
+    # Convert to LangChain format ("human" and "ai")
     history = []
     for msg in history_objs:
-        history.append((msg.role, msg.content))
+        role = "human" if msg.role == "user" else "ai"
+        history.append((role, msg.content))
 
     # 2. Get AI response
     try:
@@ -45,6 +46,8 @@ async def chat_with_tori(request: ChatRequest, db: AsyncSession = Depends(get_db
         
         return ChatResponse(response=reply)
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Agent error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
 
 @router.get("/history/{user_id}")

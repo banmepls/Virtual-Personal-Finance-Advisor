@@ -1,40 +1,67 @@
-# Virtual Personal Finance Advisor — Fault Tolerance & Resilience Report
+# Virtual Personal Finance Advisor — Raport Tehnic și de Reziliență
 
-## Introducere și Justificare
-Sistemul a fost conceput pentru a gestiona date financiare critice într-un mediu distribuit, unde dependențele externe (eToro API, Alpha Vantage) sunt puncte potențiale de eșec.
+## 1. Introducere și Justificare
+Sistemul a fost conceput pentru a gestiona date financiare critice într-un mediu distribuit, unde dependențele externe (eToro API, Alpha Vantage) pot eșua oricând. Lansarea eToro Public APIs ne-a permis trecerea la o arhitectură orientată pe AI (Agentic Workflow), cu scopul de a oferi investitorilor de retail o perspectivă clară asupra portofoliilor, fără zgomotul platformelor clasice de social trading. 
 
-## Strategia de Gestiune a Defectelor
-Am implementat o arhitectură pe mai multe niveluri pentru a asigura continuitatea serviciului:
-1.  **Bulkhead Isolation**: Serviciile sunt izolate logic. Un eșec în Alpha Vantage nu blochează accesul la portofoliul eToro.
-2.  **Circuit Breaker (Pattern)**: Previne eșecurile în cascadă. Dacă un API returnează erori repetate, circuitul se deschide (OPEN), respingând cererile imediat pentru a proteja resursele sistemului.
-3.  **Graceful Degradation with Caching**: Cache-ul LRU și DB acționează ca un fallback. Dacă un API este indisponibil, sistemul servește ultimele date cunoscute.
-4.  **Anti-Spam & Quota Enforcement**: Controlul strict al ratelor de interogare Alpha Vantage (25 req/zi) previne blocarea cheilor de API.
+**De ce "Fără Execuție"?**
+Aplicația este strict educațională și un suport decizional ("Human in the Loop"). Lipsa execuției automate protejează capitalul de posibile halucinații LLM.
 
-## Mecanisme Tehnice Implementate
+## 2. Arhitectura Sistemului și Toleranța la Defecte
+Aplicația utilizează următoarea stivă tehnologică robustă, având reziliența la bază:
 
-### 1. Circuit Breaker (`app/core/circuit_breaker.py`)
-Implementat ca un state machine asincron cu stările `CLOSED`, `OPEN`, `HALF_OPEN`.
-- **Prag eșec**: 5 erori consecutive.
-- **Timp recuperare**: 60 secunde.
+```mermaid
+graph TD
+    Client[Flutter Mobile UI] -->|HTTP/REST| FastAPI[Backend Orchestrator]
+    FastAPI --> MCP[Model Context Protocol server]
+    FastAPI --> DB[(PostgreSQL)]
+    FastAPI --> Cache[[LRU + DB Cache Layer]]
+    FastAPI --> Vault[[HashiCorp Vault]]
+    
+    MCP --> AlphaVantage[Alpha Vantage API]
+    MCP --> eToro[eToro API]
+    FastAPI --> ML[Voting Ensemble ML]
+```
 
-### 2. Caching Stratificat (`app/services/cache_service.py`)
-- **L1 (In-memory)**: LRU cache pentru latență minimă.
-- **L2 (Database)**: `CacheEntry` pentru persistență între reporniri.
+### Mecanisme de Reziliență:
+1. **Bulkhead Isolation:** Modulele eToro și Alpha Vantage sunt decuplate; eșecul unuia nu afectează sistemul.
+2. **Circuit Breaker (`app/core/circuit_breaker.py`):** Previne spam-ul de endpoint-uri moarte. Un eșec de 5 ori deschide circuitul și trece în "fail-fast" pentru 60 de secunde.
+3. **Graceful Degradation with Caching:** Cererile `market_data` pică direct pe un LRU Cache în RAM sau DB if Alpha Vantage depășește limita de cereri (429 Rate Limit).
 
-### 3. Modulul de Detecție a Anomaliilor (`app/ml/`)
-Sistem de voting între 3 modele:
-- **Isolation Forest**: Detectează outlieri structurali.
-- **PCA Autoencoder**: Reconstrucția erorii pentru deviații de pattern.
-- **One-Class SVM**: Delimitarea frontierei de date normale.
+## 3. Strategia de Gestiune a Defectelor (Case Studies)
 
-## Matricea Defectelor și Soluții
+### 3.1 Rate Limit Exceeded (Alpha Vantage 25 req/zi)
+- **Defect:** Alpha Vantage impune un prag de 25 interogări/zi la nivel de cont free.
+- **Implementare:** Modulul `CacheService` interceptează orice request de tip cotație înainte de `httpx`. Un counter memorează numărul de apeluri. Dacă depășește pragul sau dacă circuitul este deschis, sistemul servește ultima cotație valabilă reținută din baza PostgreSQL sau din Mock Data.
 
-| Defect | Impact | Soluție Tehnologică |
-| :--- | :--- | :--- |
-| API Rate Limit (429) | Blocare temporară | Circuit Breaker + Quota Counter |
-| Date Corupte/Nule | Halucinații analitice | Pydantic Schema Validation |
-| Latență Rețea Ridicată | UI înghețat | Async Timeouts + Mock Fallback |
-| Pierdere Conexiune DB | Crash Backend | Healthcheck Probes + Docker Restart |
+### 3.2 Latență Rețea & Conexiune DB 
+- **Defect:** Baza de date Postgres pe WSL cade, sau API instabil.
+- **Implementare:** Timouts asincrone integrate în serviciile proxy, retries pentru blocajele tranzacționale (SQLAlchemy asyncpg deadlock protection). Docker `pg_isready` garantează pornirea secvențială corectă.
 
-## Concluzii Reziliență
-Prin combinația de pattern-uri de design (Circuit Breaker, Bulkhead) și fallback-uri bazate pe date mock/cache, advisor-ul oferă o experiență stabilă utilizatorului retail, eliminând riscurile asociate dependențelor externe instabile.
+### 3.3 Date Sensibile (eToro API Key Leakage)
+- **Defect:** Baza de date poate fi exfiltrată.
+- **Implementare:** Cheia API este salvată transparent doar prin `etoro_key`. Intern, setter-ul o criptează via AES-256-GCM. Cheia criptografică Master se trage asincron direct din `HashiCorp Vault` în `app/core/vault.py`.
+
+## 4. Modulul de Anomali: Sistemul de Voting între 3 Modele
+Pentru a găsi outliers în comportamentul portofoliilor, am ales o abordare Ensemble.
+
+### Cele 3 Modele
+1. **Isolation Forest (`isolation_forest.py`):** Antrenat pe un flux continuu. Isolează rapid anomaliile vizibile din arborele prețurilor medii.
+2. **PCA Autoencoder (`lstm_autoencoder.py`):** Antrenat per user pentru reconstrucția "normalului spatial". O eroare mare MSE semnalizează un volatilitate bruscă pe mai multe poziții.
+3. **One-Class SVM (`one_class_svm.py`):** Desenează frontiera comportamentului non-anomal. 
+
+### Mecanismul de Voting
+S-a implementat în `anomaly_service.py` un prag multi-vot. Scorul total este ponderea erorilor:
+> \`Score = 0.4IF + 0.35AE + 0.25SVM\`
+Dacă scorul depășește un treshold (sau 2 din 3 semnalează "TRUE"), sistemul marchează în portofoliu anomalia ca fiind certificată și notifică agentul Tori (prin istoric memorie).
+
+## 5. Agentul AI conversațional (Tori) și MCP
+Utilizăm Model Context Protocol via `FastMCP` pentru a mapa funcții de citire ale serviciului core Python spre Tools LangChain. 
+- Modelele mari (Gemini 1.5 Flash via `langchain-google-genai` instalat și conectat) sunt invocate generând streaming responses direct în clientul Flutter. 
+- Istoricul discuțiilor se preia asincron din PostgreSQL, translatând `role: user` în structurile suportate de model.
+
+## 6. Implementare Software Frontend
+Flutter Mobile/Desktop a fost configurat pentru a citi din API. Endpoint-urile de Auth sunt validate prin JWT, iar Dashboard-ul redă diagrame de performanță (OHLC folosind pachetele Fl_chart vizuale). 
+Aplicația are stări de retry pentru backend downtime, semnalizând când comunicarea este imposibilă `Connection Refused` versus `Timeout`.
+
+## 7. Concluzii și Studiu Rezultate
+Construcția acestui advisor a adus laolaltă siguranța (Vault + AES256), inteligența algoritmică pasivă (Ensemble ML), consilierea activă (Tori via Gemini) și execuția asincronă defensivă (Circuit Breakers + Caching). Acest mix asigură un instrument extrem de performant, protejat de limitările tradiționale API Rate Limit (care blocau frecvent alte abordări financiare Python simple).
