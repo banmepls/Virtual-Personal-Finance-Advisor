@@ -12,7 +12,7 @@ import logging
 import httpx
 from app.core.config import get_settings
 from app.core.circuit_breaker import get_circuit_breaker, CircuitBreakerOpen
-from app.services import cache_service, mock_data
+from app.services import cache_service, mock_data, instrument_resolver
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -51,7 +51,20 @@ class MarketDataService:
         }
 
     async def get_stock_quote(self, symbol: str) -> dict:
-        cache_key = f"quote:{symbol.upper()}"
+        """
+        Public entry point for quotes.
+        Handles eToro IDs (e.g. 'ID_1253' or '1253') by resolving them to symbols.
+        """
+        clean_symbol = symbol.upper()
+        if clean_symbol.startswith("ID_") or clean_symbol.isdigit():
+            iid = int(clean_symbol.replace("ID_", ""))
+            resolved = instrument_resolver.resolve(iid)
+            if resolved["symbol"] != f"ID_{iid}":
+                clean_symbol = resolved["symbol"]
+            else:
+                raise ValueError(f"Instrument ID {iid} could not be resolved to a symbol.")
+
+        cache_key = f"quote:{clean_symbol}"
 
         # 1. Mock mode
         if USE_MOCK:
@@ -73,19 +86,20 @@ class MarketDataService:
 
         # 4. Live API call via circuit breaker
         try:
-            result = await self._cb.call(lambda: self._fetch_quote_from_api(symbol))
+            result = await self._cb.call(lambda: self._fetch_quote_from_api(clean_symbol))
             cache_service.cache_set(cache_key, result, QUOTE_TTL)
             return result
-        except CircuitBreakerOpen as e:
-            logger.warning(f"[AlphaVantage] {e} — using mock for {symbol}")
-            result = mock_data.mock_stock_quote(symbol)
-            result["_fallback"] = "circuit_breaker_open"
-            return result
         except ValueError as e:
-            return {"error": str(e)}
+            # Don't count user errors (unknown symbol/ID) toward circuit breaker failure
+            logger.warning(f"[MarketDataService] Validation error: {str(e)}")
+            raise
+        except CircuitBreakerOpen:
+            logger.warning(f"[CB:alpha_vantage] Circuit OPEN — falling back to mock for {clean_symbol}")
+            return mock_data.mock_stock_quote(clean_symbol)
         except Exception as e:
-            logger.error(f"[AlphaVantage] API error for {symbol}: {e}")
-            return {"error": str(e)}
+            self._cb.report_failure()
+            logger.error(f"[MarketDataService] Error fetching {clean_symbol}: {str(e)}")
+            return mock_data.mock_stock_quote(clean_symbol)
 
     def quota_status(self) -> dict:
         return {

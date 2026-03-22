@@ -6,7 +6,12 @@ market_service = MarketDataService()
 
 @router.get("/quote/{symbol}")
 async def get_quote(symbol: str):
-    data = await market_service.get_stock_quote(symbol)
-    if "error" in data:
-        raise HTTPException(status_code=400, detail=data["error"])
-    return data
+    try:
+        data = await market_service.get_stock_quote(symbol)
+        if "error" in data:
+            raise HTTPException(status_code=400, detail=data["error"])
+        return data
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Market data error: {str(e)}")
