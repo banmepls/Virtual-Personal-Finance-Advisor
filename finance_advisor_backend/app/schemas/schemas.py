@@ -9,6 +9,7 @@ class UserRegisterRequest(BaseModel):
     username: str
     email: str
     password: str
+    etoro_nickname: Optional[str] = None
 
     @field_validator("password")
     @classmethod
@@ -37,6 +38,12 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserRegisterResponse(BaseModel):
+    user: UserResponse
+    bt_consent_id: Optional[str] = None
+    bt_message: Optional[str] = None
 
 
 # ── Portfolio / Position schemas ──────────────────────────────────────────────

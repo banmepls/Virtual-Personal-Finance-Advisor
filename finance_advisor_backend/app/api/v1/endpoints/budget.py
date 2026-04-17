@@ -9,7 +9,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, String
 
 from app.core.database import get_db
 from app.models.budget import Budget
@@ -115,7 +115,7 @@ async def budget_status(
         select(BankTransaction).where(
             BankTransaction.user_id == user_id,
             BankTransaction.is_debit == True,
-            BankTransaction.booking_date.cast(str).like(f"{month_year}%"),
+            BankTransaction.booking_date.cast(String).like(f"{month_year}%"),
         )
     )
     transactions = tx_result.scalars().all()

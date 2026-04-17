@@ -10,7 +10,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, String
 
 from app.core.database import get_db
 from app.models.bank_transaction import BankTransaction
@@ -48,7 +48,7 @@ async def spending_categories(
         select(BankTransaction).where(
             BankTransaction.user_id == user_id,
             BankTransaction.is_debit == True,
-            BankTransaction.booking_date.cast(str).like(f"{month_year}%"),
+            BankTransaction.booking_date.cast(String).like(f"{month_year}%"),
         )
     )
     rows = result.scalars().all()
@@ -82,7 +82,7 @@ async def expense_insights(
         select(BankTransaction).where(
             BankTransaction.user_id == user_id,
             BankTransaction.is_debit == True,
-            BankTransaction.booking_date.cast(str).like(f"{month_year}%"),
+            BankTransaction.booking_date.cast(String).like(f"{month_year}%"),
         )
     )
     rows = tx_result.scalars().all()

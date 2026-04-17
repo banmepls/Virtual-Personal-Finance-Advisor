@@ -11,8 +11,9 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from passlib.context import CryptContext
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+import bcrypt
 from jose import JWTError, jwt
 
 from app.core.config import get_settings
@@ -20,18 +21,17 @@ from app.core.config import get_settings
 settings = get_settings()
 
 # ── Password hashing ─────────────────────────────────────────────────────────
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode(), salt).decode()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
@@ -69,15 +69,21 @@ def _get_aes_key() -> bytes:
 
 def encrypt_field(plaintext: str) -> str:
     """
-    Encrypts a plaintext string using AES-256-GCM.
-    Returns a base64-encoded JSON payload: {nonce: ..., ciphertext: ...}
+    Encrypts a plaintext string using AES-256-CBC with PKCS7 padding.
+    Returns a base64-encoded JSON payload: {iv: ..., c: ...}
     """
     key = _get_aes_key()
-    aesgcm = AESGCM(key)
-    nonce = os.urandom(12)  # 96-bit nonce (recommended for GCM)
-    ciphertext = aesgcm.encrypt(nonce, plaintext.encode(), None)
+    iv = os.urandom(16)  # 128-bit IV for AES-CBC
+    
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    padded_data = padder.update(plaintext.encode()) + padder.finalize()
+    
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+    
     payload = {
-        "n": base64.b64encode(nonce).decode(),
+        "iv": base64.b64encode(iv).decode(),
         "c": base64.b64encode(ciphertext).decode(),
     }
     return base64.b64encode(json.dumps(payload).encode()).decode()
@@ -87,11 +93,27 @@ def decrypt_field(encrypted: str) -> str:
     """
     Decrypts a field previously encrypted with encrypt_field().
     Raises ValueError on tampered/invalid data.
+    Supports legacy AES-GCM decryption if payload has "n" instead of "iv".
     """
     key = _get_aes_key()
-    aesgcm = AESGCM(key)
     payload = json.loads(base64.b64decode(encrypted).decode())
-    nonce = base64.b64decode(payload["n"])
     ciphertext = base64.b64decode(payload["c"])
-    plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+    
+    # Handle backward compatibility for old AES-GCM encrypted data
+    if "n" in payload:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        aesgcm = AESGCM(key)
+        nonce = base64.b64decode(payload["n"])
+        plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+        return plaintext.decode()
+        
+    iv = base64.b64decode(payload["iv"])
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    decryptor = cipher.decryptor()
+    padded_data = decryptor.update(ciphertext) + decryptor.finalize()
+    
+    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+    plaintext = unpadder.update(padded_data) + unpadder.finalize()
+    
     return plaintext.decode()
+

@@ -11,7 +11,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, String
 
 from app.core.database import get_db
 from app.models.bank_connection import BTConnection
@@ -136,7 +136,7 @@ async def get_transactions(
     if account_id:
         q = q.where(BankTransaction.account_id == account_id)
     if month_year:
-        q = q.where(BankTransaction.booking_date.cast(str).like(f"{month_year}%"))
+        q = q.where(BankTransaction.booking_date.cast(String).like(f"{month_year}%"))
     q = q.order_by(BankTransaction.booking_date.desc()).limit(limit)
 
     result = await db.execute(q)
@@ -252,7 +252,7 @@ async def spending_summary(
     q = (select(BankTransaction)
          .where(BankTransaction.user_id == user_id)
          .where(BankTransaction.is_debit == True)
-         .where(BankTransaction.booking_date.cast(str).like(f"{month_year}%")))
+         .where(BankTransaction.booking_date.cast(String).like(f"{month_year}%")))
     result = await db.execute(q)
     rows = result.scalars().all()
 

@@ -9,14 +9,19 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.user import User
-from app.schemas.schemas import UserRegisterRequest, UserLoginRequest, TokenResponse, UserResponse
+from app.models.bank_connection import BTConnection
+from app.services.bt_service import bt_service
+from app.schemas.schemas import UserRegisterRequest, UserLoginRequest, TokenResponse, UserResponse, UserRegisterResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserRegisterResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_db)):
-    """Register a new user with hashed password."""
+    """Register a new user with hashed password, eToro nickname, and optional BT connectivity."""
     # Check uniqueness
     result = await db.execute(select(User).where(User.username == request.username))
     if result.scalar_one_or_none():
@@ -31,10 +36,35 @@ async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_
         email=request.email,
         hashed_password=hash_password(request.password),
     )
+    if request.etoro_nickname:
+        user.etoro_key = request.etoro_nickname
+        
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    return user
+
+    # Initialize Banca Transilvania Consent
+    bt_consent_id = None
+    bt_message = "Skipped BT connect."
+    try:
+        consent_data = await bt_service.create_consent(user.id)
+        consent_id = consent_data["consentId"]
+        is_sandbox = consent_data.get("_sandbox", False)
+        
+        conn = BTConnection(user_id=user.id, consent_id=consent_id, is_sandbox=is_sandbox)
+        db.add(conn)
+        await db.commit()
+        bt_consent_id = consent_id
+        bt_message = "BT Sandbox connected." if is_sandbox else "BT consent created. Please complete OAuth."
+    except Exception as e:
+        logger.warning(f"Failed to initialize BT consent for new user {user.id}: {e}")
+        bt_message = "Registration successful, but BT initialization failed."
+
+    return UserRegisterResponse(
+        user=user,
+        bt_consent_id=bt_consent_id,
+        bt_message=bt_message
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
