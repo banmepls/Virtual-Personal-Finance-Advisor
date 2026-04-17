@@ -5,7 +5,6 @@ class ApiService {
   // Use '10.0.2.2' for Android Emulator, '127.0.0.1' for iOS Simulator/Desktop
   // Use your machine's LAN IP (e.g., '192.168.1.x') for real devices.
   static const String baseUrl = 'http://localhost:8000/api/v1';
-  // static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
   String? _token;
 
   void setToken(String token) {
@@ -26,7 +25,6 @@ class ApiService {
           body: jsonEncode({'username': username, 'password': password}),
         )
         .timeout(const Duration(seconds: 10));
-
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
       _token = data['access_token'];
@@ -40,8 +38,7 @@ class ApiService {
         .post(
           Uri.parse('$baseUrl/auth/register'),
           headers: _headers,
-          body: jsonEncode(
-              {'username': username, 'email': email, 'password': password}),
+          body: jsonEncode({'username': username, 'email': email, 'password': password}),
         )
         .timeout(const Duration(seconds: 10));
     return jsonDecode(response.body) as Map<String, dynamic>;
@@ -114,6 +111,121 @@ class ApiService {
     final response = await http
         .get(Uri.parse('$baseUrl/health'), headers: _headers)
         .timeout(const Duration(seconds: 5));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  // ── Bank (BT PSD2) ────────────────────────────────────────────────────────
+  Future<Map<String, dynamic>> connectBank() async {
+    final response = await http
+        .post(Uri.parse('$baseUrl/bank/connect'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getBankAccounts() async {
+    final response = await http
+        .get(Uri.parse('$baseUrl/bank/accounts'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getBankBalances(String accountId) async {
+    final response = await http
+        .get(Uri.parse('$baseUrl/bank/balances/$accountId'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getBankTransactions({String? monthYear, int limit = 100}) async {
+    var url = '$baseUrl/bank/transactions?limit=$limit';
+    if (monthYear != null) url += '&month_year=$monthYear';
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 20));
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> syncBank() async {
+    final response = await http
+        .post(Uri.parse('$baseUrl/bank/sync'), headers: _headers)
+        .timeout(const Duration(seconds: 30));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getSubscriptions() async {
+    final response = await http
+        .get(Uri.parse('$baseUrl/bank/subscriptions'), headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getSpendingSummary({String? monthYear}) async {
+    var url = '$baseUrl/bank/spending-summary';
+    if (monthYear != null) url += '?month_year=$monthYear';
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  // ── Budget Manager ────────────────────────────────────────────────────────
+  Future<List<dynamic>> getBudgets({String? monthYear}) async {
+    var url = '$baseUrl/budget/';
+    if (monthYear != null) url += '?month_year=$monthYear';
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> createBudget(
+      String category, String monthYear, double limit) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/budget/'),
+          headers: _headers,
+          body: jsonEncode({
+            'category': category,
+            'month_year': monthYear,
+            'limit_amount': limit,
+            'currency': 'RON',
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<void> deleteBudget(int budgetId) async {
+    await http
+        .delete(Uri.parse('$baseUrl/budget/$budgetId'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+  }
+
+  Future<Map<String, dynamic>> getBudgetStatus({String? monthYear}) async {
+    var url = '$baseUrl/budget/status';
+    if (monthYear != null) url += '?month_year=$monthYear';
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 15));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  // ── Expense Analytics ─────────────────────────────────────────────────────
+  Future<Map<String, dynamic>> getExpenseInsights({String? monthYear}) async {
+    var url = '$baseUrl/expenses/insights';
+    if (monthYear != null) url += '?month_year=$monthYear';
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 30));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getExpenseCategories({String? monthYear}) async {
+    var url = '$baseUrl/expenses/categories';
+    if (monthYear != null) url += '?month_year=$monthYear';
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 15));
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 }

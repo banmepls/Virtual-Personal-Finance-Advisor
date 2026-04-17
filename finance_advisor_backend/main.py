@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 import app.models
-from app.api.v1.endpoints import market, etoro, auth, anomaly, health, agent
+from app.api.v1.endpoints import market, etoro, auth, anomaly, health, agent, bank, budget, expenses
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -66,6 +66,9 @@ app.include_router(auth.router,     prefix="/api/v1/auth",     tags=["Authentica
 app.include_router(anomaly.router,  prefix="/api/v1/anomaly",  tags=["Anomaly Detection"])
 app.include_router(health.router,   prefix="/api/v1",          tags=["Health"])
 app.include_router(agent.router,    prefix="/api/v1/agent",    tags=["AI Agent"])
+app.include_router(bank.router,     prefix="/api/v1/bank",     tags=["Bank (BT PSD2)"])
+app.include_router(budget.router,   prefix="/api/v1/budget",   tags=["Budget Manager"])
+app.include_router(expenses.router, prefix="/api/v1/expenses", tags=["Expense Analytics"])
 
 
 @app.get("/", tags=["Root"])

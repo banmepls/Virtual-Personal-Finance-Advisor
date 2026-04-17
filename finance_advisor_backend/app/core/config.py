@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: str
     postgres_db: str
+
+    # Banca Transilvania Open Banking (PSD2)
+    use_bt_sandbox: bool = True
+    bt_client_id: str = ""
+    bt_client_secret: str = ""
+    bt_base_url: str = "https://apistorebt.ro/bt/sb"
+    bt_oauth_url: str = "https://apistorebt.ro/bt/sb/oauth2"
     
     # Load from .env
     model_config = SettingsConfigDict(

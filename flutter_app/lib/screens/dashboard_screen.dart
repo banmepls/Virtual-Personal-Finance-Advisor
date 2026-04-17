@@ -7,6 +7,10 @@ import '../services/api_service.dart';
 import 'anomaly_screen.dart';
 import 'chart_screen.dart';
 import 'chat_screen.dart';
+import 'bank_screen.dart';
+import 'budget_screen.dart';
+import 'subscription_screen.dart';
+import 'expense_ai_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -44,55 +48,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      _buildPortfolioView(),
-      ChartScreen(positions: _portfolio?.positions ?? []),
-      AnomalyScreen(positions: _portfolio?.positions ?? []),
-      ChatScreen(userId: 1), // Assuming user ID 1 for now
+    // ── 5 top-level screens ──────────────────────────────────────────────────
+    // Tab 0: Portfolio (investment overview)
+    // Tab 1: Bank (BT transactions)
+    // Tab 2: Budget+Expenses (bank analytics)
+    // Tab 3: Charts+Anomaly (portfolio analytics)
+    // Tab 4: Tori Chat (AI)
+
+    final List<Widget> screens = [
+      // ── Tab 0: Portfolio ──────────────────────────────────────────────────
+      _loading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF58A6FF)))
+          : _error != null
+              ? _buildError()
+              : _buildPortfolioView(),
+
+      // ── Tab 1: Bank ───────────────────────────────────────────────────────
+      const BankScreen(),
+
+      // ── Tab 2: Money (Budget + Subscriptions + Expenses) ──────────────────
+      _buildMoneyHub(),
+
+      // ── Tab 3: Analytics (Charts + Anomaly) ───────────────────────────────
+      _buildAnalyticsHub(),
+
+      // ── Tab 4: Tori AI ────────────────────────────────────────────────────
+      ChatScreen(userId: 1),
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
-        elevation: 0,
-        title: Text(
-          'Virtual Finance Advisor',
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF238636),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'LIVE',
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+      appBar: _selectedIndex == 0
+          ? AppBar(
+              backgroundColor: const Color(0xFF161B22),
+              elevation: 0,
+              title: Text(
+                'Virtual Finance Advisor',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF58A6FF)))
-          : _error != null
-              ? _buildError()
-              : screens[_selectedIndex],
+              actions: [
+                Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF238636),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'LIVE',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : null,
+      body: screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         backgroundColor: const Color(0xFF161B22),
         indicatorColor: const Color(0xFF58A6FF).withOpacity(0.2),
         selectedIndex: _selectedIndex,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         onDestinationSelected: (i) => setState(() => _selectedIndex = i),
         destinations: [
           NavigationDestination(
@@ -103,24 +126,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: 'Portfolio',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.candlestick_chart_outlined,
+            icon: const Icon(Icons.account_balance_outlined,
                 color: Color(0xFF8B949E)),
-            selectedIcon: const Icon(Icons.candlestick_chart,
+            selectedIcon: const Icon(Icons.account_balance,
                 color: Color(0xFF58A6FF)),
-            label: 'Charts',
+            label: 'Bank',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.warning_amber_outlined,
+            icon: const Icon(Icons.savings_outlined,
                 color: Color(0xFF8B949E)),
-            selectedIcon:
-                const Icon(Icons.warning_amber, color: Color(0xFF58A6FF)),
-            label: 'Anomaly',
+            selectedIcon: const Icon(Icons.savings,
+                color: Color(0xFF58A6FF)),
+            label: 'Money',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline,
+            icon: const Icon(Icons.analytics_outlined,
                 color: Color(0xFF8B949E)),
-            selectedIcon:
-                const Icon(Icons.chat_bubble, color: Color(0xFF58A6FF)),
+            selectedIcon: const Icon(Icons.analytics,
+                color: Color(0xFF58A6FF)),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.smart_toy_outlined,
+                color: Color(0xFF8B949E)),
+            selectedIcon: const Icon(Icons.smart_toy,
+                color: Color(0xFF58A6FF)),
             label: 'Tori',
           ),
         ],
@@ -128,6 +158,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // ── Tab 2: Money hub — Budget / Subscriptions / Expenses ──────────────────
+  Widget _buildMoneyHub() {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0D1117),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF161B22),
+          elevation: 0,
+          title: Text('Money',
+              style: GoogleFonts.inter(
+                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+          bottom: TabBar(
+            indicatorColor: const Color(0xFF58A6FF),
+            labelColor: const Color(0xFF58A6FF),
+            unselectedLabelColor: const Color(0xFF8B949E),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+            tabs: const [
+              Tab(text: 'Budget', icon: Icon(Icons.pie_chart, size: 18)),
+              Tab(text: 'Subscriptions', icon: Icon(Icons.repeat, size: 18)),
+              Tab(text: 'AI Analysis', icon: Icon(Icons.auto_awesome, size: 18)),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            BudgetScreen(),
+            SubscriptionScreen(),
+            ExpenseAIScreen(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Tab 3: Analytics hub — Charts / Anomaly ───────────────────────────────
+  Widget _buildAnalyticsHub() {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0D1117),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF161B22),
+          elevation: 0,
+          title: Text('Analytics',
+              style: GoogleFonts.inter(
+                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+          bottom: TabBar(
+            indicatorColor: const Color(0xFF58A6FF),
+            labelColor: const Color(0xFF58A6FF),
+            unselectedLabelColor: const Color(0xFF8B949E),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+            tabs: const [
+              Tab(text: 'Charts', icon: Icon(Icons.candlestick_chart, size: 18)),
+              Tab(text: 'Anomaly', icon: Icon(Icons.warning_amber, size: 18)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            ChartScreen(positions: _portfolio?.positions ?? []),
+            AnomalyScreen(positions: _portfolio?.positions ?? []),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Portfolio View (Tab 0) ────────────────────────────────────────────────
   Widget _buildPortfolioView() {
     if (_portfolio == null) return const SizedBox();
     return RefreshIndicator(
