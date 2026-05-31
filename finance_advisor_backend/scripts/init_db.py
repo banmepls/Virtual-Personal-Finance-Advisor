@@ -1,6 +1,9 @@
 import asyncio
 import sys
-sys.path.append("/home/eldra/Virtual-Personal-Finance-Advisor/finance_advisor_backend")
+import os
+
+# Add the current directory to sys.path to allow importing 'app'
+sys.path.append(os.getcwd())
 
 from app.core.database import engine, Base
 import app.models

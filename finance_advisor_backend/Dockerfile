@@ -21,8 +21,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the backend code
 COPY finance_advisor_backend/ .
 
+# Copy and set permissions for entrypoint
+RUN chmod +x entrypoint.sh
+
 # Expose port
 EXPOSE 8000
 
 # Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "uvloop"]
+ENTRYPOINT ["./entrypoint.sh"]

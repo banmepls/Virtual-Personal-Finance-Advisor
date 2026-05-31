@@ -120,8 +120,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 Navigator.pop(ctx);
                 try {
                   await apiService.createBudget(selectedCategory, _selectedMonth, limit);
+                  if (!mounted) return;
                   await _load();
                 } catch (e) {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error: $e'), backgroundColor: _red),
                   );

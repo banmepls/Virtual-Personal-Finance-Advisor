@@ -16,7 +16,6 @@ from app.services import cache_service, mock_data, instrument_resolver
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-USE_MOCK = os.getenv("USE_MOCK_DATA", "false").lower() == "true"
 
 QUOTE_TTL = 3600   # 60 minutes — quotes rarely need to be fresher during dev
 SENTIMENT_TTL = 1800  # 30 minutes
@@ -67,7 +66,7 @@ class MarketDataService:
         cache_key = f"quote:{clean_symbol}"
 
         # 1. Mock mode
-        if USE_MOCK:
+        if settings.use_mock_data:
             logger.info(f"[AlphaVantage] Mock mode — returning mock quote for {symbol}")
             return mock_data.mock_stock_quote(symbol)
 
@@ -159,7 +158,7 @@ class MarketDataService:
         cache_key = f"history:{clean_symbol}"
 
         # 1. Mock mode
-        if USE_MOCK:
+        if settings.use_mock_data:
             return mock_data.mock_stock_history(clean_symbol, days)
 
         # 2. Cache hit (History is cached for 24h as it's daily data)

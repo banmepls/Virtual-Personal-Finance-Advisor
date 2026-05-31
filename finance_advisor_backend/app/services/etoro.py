@@ -16,7 +16,6 @@ from app.services import cache_service, mock_data, instrument_resolver
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-USE_MOCK = os.getenv("USE_MOCK_DATA", "false").lower() == "true"
 
 PORTFOLIO_CACHE_KEY = "etoro:portfolio"
 PORTFOLIO_TTL = 300  # 5 minutes
@@ -101,7 +100,7 @@ class EtoroService:
 
     async def get_live_portfolio(self) -> dict:
         # 1. Return mock data immediately in dev mode
-        if USE_MOCK:
+        if settings.use_mock_data:
             logger.info("[eToro] Mock mode active — returning static portfolio")
             data = mock_data.MOCK_ETORO_PORTFOLIO.copy()
             data["positions"] = await self._enrich_positions(data["positions"])

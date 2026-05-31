@@ -66,6 +66,7 @@ class _BankScreenState extends State<BankScreen> {
     setState(() => _syncing = true);
     try {
       final result = await apiService.syncBank();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('✅ ${result['message'] ?? 'Synced!'}',
@@ -75,6 +76,7 @@ class _BankScreenState extends State<BankScreen> {
       );
       await _loadData();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sync failed: $e'), backgroundColor: _red),
       );

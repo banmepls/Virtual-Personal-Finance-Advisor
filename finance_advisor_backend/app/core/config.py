@@ -5,15 +5,17 @@ class Settings(BaseSettings):
     app_name: str = "Virtual Finance Advisor"
 
     # API Keys
-    etoro_api_key: str
-    etoro_user_key: str
-    etoro_base_url: str
+    etoro_api_key: str = ""
+    etoro_user_key: str = ""
+    etoro_base_url: str = "https://api.etoro.com"
     etoro_env: str = "demo"
-    etoro_username: str
+    etoro_username: str = "demo_user"
 
-    alpha_vantage_api_key: str
-    secret_key: str
-    google_api_key: str
+    alpha_vantage_api_key: str = ""
+    secret_key: str = "default_secret_key_for_dev_only"
+    google_api_key: str = ""
+
+    use_mock_data: bool = True
 
     # Database
     database_url: str

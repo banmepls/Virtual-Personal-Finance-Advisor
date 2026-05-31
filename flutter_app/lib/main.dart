@@ -16,11 +16,7 @@ class FinanceAdvisorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF58A6FF),
-          surface: const Color(0xFF0D1117),
-          surfaceContainerHighest: const Color(0xFF161B22),
-        ),
+        primaryColor: const Color(0xFF58A6FF),
         scaffoldBackgroundColor: const Color(0xFF0D1117),
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         useMaterial3: true,

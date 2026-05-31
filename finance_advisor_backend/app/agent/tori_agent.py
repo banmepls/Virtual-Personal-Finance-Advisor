@@ -12,9 +12,16 @@ from app.core.config import get_settings
 settings = get_settings()
 
 def create_tori_agent(user_id: int):
+    # Fallback to a mock LLM or dummy response if no API key is provided
+    if not settings.google_api_key:
+        class MockLLM:
+            async def ainvoke(self, input_data, *args, **kwargs):
+                return {"messages": [type('msg', (), {'content': "I'm currently in offline mode because no Google API Key was provided. Please configure GOOGLE_API_KEY to enable my full AI capabilities!"})()]}
+        return MockLLM()
+
     # Initialize LLM with Google Gemini
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash", 
+        model="gemini-2.0-flash",
         temperature=0,
         api_key=settings.google_api_key
     )

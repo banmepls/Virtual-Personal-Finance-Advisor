@@ -1,10 +1,30 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Use '10.0.2.2' for Android Emulator, '127.0.0.1' for iOS Simulator/Desktop
-  // Use your machine's LAN IP (e.g., '192.168.1.x') for real devices.
-  static const String baseUrl = 'http://localhost:8000/api/v1';
+  /// The base URL for the API. 
+  /// 1. Prioritizes --dart-define=API_BASE_URL=...
+  /// 2. If not provided, uses 10.0.2.2 for Android Emulators
+  /// 3. Fallback to localhost for Web/iOS/Desktop
+  static String get baseUrl {
+    const fromEnv = String.fromEnvironment('API_BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+
+    if (kIsWeb) return 'http://localhost:8000/api/v1';
+    
+    // Check for Android Emulator
+    try {
+      if (Platform.isAndroid) return 'http://10.0.2.2:8000/api/v1';
+    } catch (_) {
+      // Platform.isAndroid can throw on web if not careful, 
+      // though kIsWeb check above should catch it.
+    }
+    
+    return 'http://localhost:8000/api/v1';
+  }
+
   String? _token;
 
   void setToken(String token) {

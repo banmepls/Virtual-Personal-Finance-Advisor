@@ -26,6 +26,44 @@ flutter pub get
 flutter run -d [linux|windows|android]
 ```
 
+## Deployment (Production)
+
+The project is containerized using Docker for easy deployment of both backend and frontend.
+
+### 1. Configure Environment
+Create a `.env` file in the root directory with the following variables:
+```env
+# Backend Keys
+ETORO_API_KEY=your_etoro_api_key
+ETORO_USER_KEY=your_etoro_user_key
+ETORO_BASE_URL=https://api.etoro.com
+ETORO_ENV=demo
+ETORO_USERNAME=your_username
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
+SECRET_KEY=your_generated_secret_key
+GOOGLE_API_KEY=your_gemini_api_key
+
+# Database
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=finance_advisor
+
+# Mock Data (Set to true to run without API keys)
+USE_MOCK_DATA=true
+
+# Frontend
+API_BASE_URL=http://localhost:8000/api/v1
+```
+
+### 2. Deploy with Docker Compose
+```bash
+docker-compose up --build -d
+```
+This will:
+- Spin up a PostgreSQL 16 database.
+- Build and run the FastAPI backend (available at `http://localhost:8000`).
+- Build the Flutter Web app and serve it via Nginx (available at `http://localhost`).
+
 ## Security
 - **AES-256-GCM**: Field-level encryption for sensitive user keys.
 - **JWT**: Secure session management.

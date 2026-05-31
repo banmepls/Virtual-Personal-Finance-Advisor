@@ -39,5 +39,19 @@ services:
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - USE_MOCK_DATA=${USE_MOCK_DATA:-true}
     ports:
-      - "8000:8000"
+      - "8001:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: flutter_app/Dockerfile
+      args:
+        - API_BASE_URL=${API_BASE_URL:-http://localhost:8001/api/v1}
+    container_name: finance_advisor_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
