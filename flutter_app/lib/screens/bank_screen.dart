@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/bank_model.dart';
 import '../services/api_service.dart';
 
@@ -18,6 +19,8 @@ class _BankScreenState extends State<BankScreen> {
   bool _loading = true;
   bool _syncing = false;
   String? _error;
+  String? _authUrl;
+  bool _usedRealApi = false;
   String _selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
 
   static const _primary = Color(0xFF58A6FF);
@@ -39,7 +42,13 @@ class _BankScreenState extends State<BankScreen> {
     setState(() => _loading = true);
     try {
       // Auto-connect (sandbox) + load accounts
-      await apiService.connectBank();
+      final connectRes = await apiService.connectBank();
+      final newAuthUrl = connectRes['auth_url']?.toString() ?? '';
+      setState(() {
+        _authUrl = newAuthUrl.isNotEmpty ? newAuthUrl : null;
+        if (_authUrl == null) _usedRealApi = connectRes['is_sandbox'] == false;
+      });
+
       final accounts = await apiService.getBankAccounts();
       if (accounts.isNotEmpty) {
         _account = BankAccount.fromJson(accounts.first as Map<String, dynamic>);
@@ -59,6 +68,39 @@ class _BankScreenState extends State<BankScreen> {
         _error = e.toString();
         _loading = false;
       });
+    }
+  }
+
+  bool get _isRealAuthUrl => _authUrl != null && _authUrl!.startsWith('https://');
+
+  Future<void> _launchAuthUrl() async {
+    if (_authUrl == null) return;
+    final uri = Uri.parse(_authUrl!);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open browser for authentication.')),
+      );
+    }
+  }
+
+  Future<void> _sandboxAuthorize() async {
+    setState(() => _loading = true);
+    try {
+      await apiService.sandboxAuthorize();
+      setState(() => _authUrl = null);
+      await _loadData();
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Authorization failed: $e'),
+            backgroundColor: _red,
+          ),
+        );
+      }
     }
   }
 
@@ -93,10 +135,12 @@ class _BankScreenState extends State<BankScreen> {
           ? const Center(child: CircularProgressIndicator(color: _primary))
           : _error != null
               ? _buildError()
-              : RefreshIndicator(
-                  onRefresh: _loadData,
-                  color: _primary,
-                  child: CustomScrollView(
+              : _authUrl != null && _account == null
+                  ? _buildAuthRequired()
+                  : RefreshIndicator(
+                      onRefresh: _loadData,
+                      color: _primary,
+                      child: CustomScrollView(
                     slivers: [
                       _buildAppBar(),
                       SliverToBoxAdapter(child: _buildAccountCard()),
@@ -151,7 +195,7 @@ class _BankScreenState extends State<BankScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFF238636).withOpacity(0.6)),
             ),
-            child: Text('SANDBOX',
+            child: Text(_usedRealApi ? 'SANDBOX' : 'DEMO DATA',
                 style: GoogleFonts.inter(
                     color: _green, fontSize: 9, fontWeight: FontWeight.w700)),
           ),
@@ -358,6 +402,88 @@ class _BankScreenState extends State<BankScreen> {
             child: const Text('Retry'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAuthRequired() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1F3A8A).withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.account_balance, color: _primary, size: 40),
+            ),
+            const SizedBox(height: 24),
+            Text('Bank Connection Required',
+                style: GoogleFonts.inter(
+                    color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text(
+              _isRealAuthUrl
+                  ? 'Authenticate with your Banca Transilvania account to sync real sandbox data.'
+                  : 'Connect with demo data to explore the app features.',
+              style: GoogleFonts.inter(color: _muted, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _isRealAuthUrl ? _launchAuthUrl : _sandboxAuthorize,
+                icon: Icon(
+                  _isRealAuthUrl ? Icons.open_in_browser : Icons.account_balance,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  _isRealAuthUrl ? 'Open BT Bank Login' : 'Connect Demo Data',
+                  style: GoogleFonts.inter(
+                      color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            if (_isRealAuthUrl) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: _sandboxAuthorize,
+                  icon: const Icon(Icons.account_balance, color: _primary),
+                  label: Text(
+                    'Connect Demo Data',
+                    style: GoogleFonts.inter(
+                        color: _primary, fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: _primary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh, color: _primary),
+                label: Text('I have completed authentication',
+                    style: GoogleFonts.inter(color: _primary)),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

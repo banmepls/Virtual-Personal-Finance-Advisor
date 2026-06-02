@@ -3,22 +3,24 @@ app/services/bt_service.py
 ───────────────────────────
 Banca Transilvania PSD2 AISP integration.
 
-In sandbox mode (USE_BT_SANDBOX=true) all calls return realistic Romanian
-mock data — no network calls, no credentials required. Perfect for thesis demo.
+OAuth2 flow (Sandbox):
+  Step 1 – Consent    : POST /bt-psd2-aisp/v2/consents  (no auth header needed in sandbox)
+                        → consentId; we build the Keycloak auth URL manually with PKCE
+  Step 2 – User auth  : User opens Keycloak URL in browser
+                        → BT calls back /oauth2/callback?code=...
+  Step 3 – User token : POST /oauth/token  (authorization_code + PKCE verifier)
+                        → access_token stored in BTConnection
 
-For real BT Open Banking:
-  1. Register at https://apistorebt.ro/bt/sb/
-  2. Obtain client_id / client_secret
-  3. Implement OAuth2 redirect flow (user opens a browser/WebView)
-  4. BT base URL: https://api.bancatransilvania.ro (production)
-     sandbox:     https://apistorebt.ro/bt/sb
+If credentials are missing or the API errors, all calls fall back to locally
+generated mock data so the thesis demo always works.
 """
-import json
 import random
 import hashlib
-from datetime import date, timedelta, datetime, timezone
+from datetime import date, timedelta
 from typing import Optional
 import logging
+import httpx
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ _MERCHANT_CATEGORIES = {
 # Subscription merchants (always recurring)
 _SUBSCRIPTION_MERCHANTS = {"Spotify Technology", "Netflix Romania", "Adobe Systems", "Microsoft Office", "Hbo Max Romania", "Digi RCS-RDS", "Orange Romania", "Vodafone Romania"}
 
-def _generate_mock_transactions(account_id: str, days_back: int = 90) -> list[dict]:
+def _generate_mock_transactions(account_id: str, days_back: int = 120) -> list[dict]:
     """Generate realistic Romanian bank transactions for the past N days."""
     random.seed(42)  # deterministic for consistent demo
     transactions = []
@@ -147,65 +149,246 @@ def _generate_mock_transactions(account_id: str, days_back: int = 90) -> list[di
 
 class BTService:
     """
-    Wraps BT PSD2 AISP API calls.
-    When use_sandbox=True all methods return mock data without any network calls.
+    Wraps BT PSD2 AISP API calls for the BT Sandbox.
     """
+
+    # BT NextGenPSD2 AISP API base (v2)
+    _AISP_PATH = "/bt-psd2-aisp/v2"
+    # Keycloak authorization endpoint (from .well-known)
+    _AUTH_ENDPOINT = "https://apistorebt.ro/auth/realms/psd2-sb/protocol/openid-connect/auth"
 
     def __init__(self, use_sandbox: bool = True,
                  client_id: Optional[str] = None,
                  client_secret: Optional[str] = None,
-                 base_url: str = "https://apistorebt.ro/bt/sb"):
+                 base_url: str = "https://api.apistorebt.ro/bt/sb"):
         self.use_sandbox = use_sandbox
         self.client_id = client_id
         self.client_secret = client_secret
-        self.base_url = base_url
+        self.base_url = base_url.rstrip('/')
+        self.redirect_uri = "http://localhost:8001/api/v1/bank/oauth2/callback"
 
-    # ── Consent / OAuth2 ─────────────────────────────────────────────────────
+    @property
+    def _aisp(self) -> str:
+        return f"{self.base_url}{self._AISP_PATH}"
+
+    def _get_headers(self, access_token: Optional[str] = None, consent_id: Optional[str] = None) -> dict:
+        headers = {
+            "X-Request-ID": str(uuid.uuid4()),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
+        if consent_id:
+            headers["Consent-ID"] = consent_id
+        return headers
 
     async def create_consent(self, user_id: int) -> dict:
-        """Create a PSD2 AIS consent. In sandbox returns a mock consent ID."""
-        if self.use_sandbox:
-            return {
-                "consentId": f"sandbox-consent-{user_id}-2026",
-                "consentStatus": "valid",
-                "scaRedirect": None,  # No redirect needed in sandbox
-                "_sandbox": True,
-            }
-        # Real implementation: POST /v2/consents with Bearer token
-        raise NotImplementedError("Real BT OAuth2 not yet configured. Set USE_BT_SANDBOX=true.")
+        """Create a PSD2 AIS consent and get authorization URL.
+
+        If real credentials are configured, calls the BT API and returns the
+        real scaRedirect URL so the user can log in via BT's sandbox portal.
+        Falls back to a local mock page when no credentials are set.
+        """
+        _placeholder_ids = {"sandbox_client_id", "", None}
+        if self.client_id not in _placeholder_ids and self.client_secret not in _placeholder_ids:
+            try:
+                result = await self._try_real_consent(user_id)
+                if result:
+                    return result
+            except Exception as e:
+                logger.warning(f"Real BT consent failed ({e}), falling back to local mock")
+
+        # Local mock fallback — works without any BT credentials
+        from urllib.parse import urlencode
+        state = f"user_{user_id}_{uuid.uuid4().hex[:8]}"
+        sandbox_login_url = self.redirect_uri.replace("/oauth2/callback", "/sandbox-login")
+        params = {"client_id": self.client_id, "redirect_uri": self.redirect_uri, "state": state}
+        return {
+            "consentId": f"consent-{state}",
+            "consentStatus": "awaitingAuthorization",
+            "scaRedirect": f"{sandbox_login_url}?{urlencode(params)}",
+            "_sandbox": True,
+        }
+
+    async def _try_real_consent(self, user_id: int) -> Optional[dict]:
+        """Call the real BT NextGenPSD2 v2 API to create an AIS consent.
+
+        BT does NOT return a scaRedirect link — we build the Keycloak auth URL
+        ourselves using the consentId as the AIS scope, with PKCE.
+        Returns a dict that includes the generated auth URL and the PKCE
+        code_verifier so the caller can persist it for the token exchange.
+        """
+        import secrets as _secrets
+        import hashlib as _hashlib
+        import base64 as _base64
+        from urllib.parse import urlencode as _urlencode
+
+        # PKCE
+        code_verifier  = _secrets.token_urlsafe(64)
+        digest         = _hashlib.sha256(code_verifier.encode()).digest()
+        code_challenge = _base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+        state          = _secrets.token_urlsafe(32)
+        nonce          = _secrets.token_urlsafe(32)
+
+        # POST /bt-psd2-aisp/v2/consents  (no Authorization header — BT sandbox accepts without one)
+        url = f"{self._aisp}/consents"
+        body = {
+            "access": {"availableAccounts": "allAccounts"},
+            "recurringIndicator": True,
+            "validUntil": (date.today() + timedelta(days=179)).isoformat(),
+            "frequencyPerDay": 4,
+            "combinedServiceIndicator": False,
+        }
+        headers = {
+            "X-Request-ID": str(uuid.uuid4()),
+            "PSU-IP-Address": "127.0.0.1",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, json=body, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+
+        consent_id = data.get("consentId")
+        if not consent_id:
+            logger.warning(f"No consentId in BT consent response: {data}")
+            return None
+
+        # Build Keycloak auth URL with PKCE
+        params = {
+            "client_id":             self.client_id,
+            "redirect_uri":          self.redirect_uri,
+            "response_type":         "code",
+            "scope":                 f"AIS:{consent_id}",
+            "state":                 state,
+            "nonce":                 nonce,
+            "code_challenge":        code_challenge,
+            "code_challenge_method": "S256",
+        }
+        sca_redirect = f"{self._AUTH_ENDPOINT}?{_urlencode(params)}"
+
+        return {
+            "consentId":    consent_id,
+            "consentStatus": data.get("consentStatus", "received"),
+            "scaRedirect":  sca_redirect,
+            "_code_verifier": code_verifier,   # caller must persist this
+            "_sandbox":     True,
+        }
+
+    async def exchange_token(self, code: str, code_verifier: Optional[str] = None) -> dict:
+        """Exchange OAuth2 authorization code for access token (with optional PKCE verifier)."""
+        url = f"{self.base_url}/oauth/token"
+        data = {
+            "grant_type":   "authorization_code",
+            "code":         code,
+            "redirect_uri": self.redirect_uri,
+            "client_id":    self.client_id,
+            "client_secret": self.client_secret,
+        }
+        if code_verifier:
+            data["code_verifier"] = code_verifier
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(url, data=data)
+            if not response.is_success:
+                raise ValueError(
+                    f"BT token exchange failed — HTTP {response.status_code}: {response.text}"
+                )
+            return response.json()
 
     async def get_accounts(self, consent_id: str, access_token: Optional[str] = None) -> dict:
-        """List available payment accounts."""
-        if self.use_sandbox:
-            return {"accounts": _MOCK_ACCOUNTS}
-        raise NotImplementedError("Real BT OAuth2 not yet configured.")
+        """List available payment accounts via BT NextGenPSD2 v2."""
+        if not access_token:
+            return {"accounts": []}
+
+        url = f"{self._aisp}/accounts"
+        headers = self._get_headers(access_token, consent_id)
+        headers["PSU-IP-Address"] = "127.0.0.1"
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            try:
+                response = await client.get(url, headers=headers)
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPError as e:
+                logger.warning(f"BT accounts failed ({e}), falling back to mock")
+                return {"accounts": _MOCK_ACCOUNTS}
 
     async def get_balances(self, account_id: str, consent_id: str,
                            access_token: Optional[str] = None) -> dict:
-        """Get account balances."""
-        if self.use_sandbox:
+        """Get account balances via BT NextGenPSD2 v2."""
+        if not access_token:
             return _MOCK_BALANCE
-        raise NotImplementedError("Real BT OAuth2 not yet configured.")
+
+        url = f"{self._aisp}/accounts/{account_id}/balances"
+        headers = self._get_headers(access_token, consent_id)
+        headers["PSU-IP-Address"] = "127.0.0.1"
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            try:
+                response = await client.get(url, headers=headers)
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPError:
+                return _MOCK_BALANCE
 
     async def get_transactions(self, account_id: str, consent_id: str,
                                date_from: Optional[date] = None,
                                date_to: Optional[date] = None,
                                access_token: Optional[str] = None) -> dict:
-        """Get account transaction history."""
-        if self.use_sandbox:
-            txns = _generate_mock_transactions(account_id, days_back=90)
-            # Filter by date range if provided
-            if date_from:
-                txns = [t for t in txns if t["bookingDate"] >= date_from.isoformat()]
-            if date_to:
-                txns = [t for t in txns if t["bookingDate"] <= date_to.isoformat()]
-            return {
-                "transactions": {
-                    "booked": txns,
-                    "pending": [],
-                }
-            }
-        raise NotImplementedError("Real BT OAuth2 not yet configured.")
+        """Get account transaction history via BT NextGenPSD2 v2.
+
+        Sandbox notes (from bt_apis.md):
+        - 7-day window restriction is removed — up to 120 days in one request.
+        - bookingStatus is mandatory.
+        - PSU-IP-Address bypasses frequencyPerDay limit entirely.
+        - Pagination via limit/page params; follow _links.next.href until exhausted.
+        """
+        mock_txns = {"transactions": {"booked": _generate_mock_transactions(account_id, days_back=120), "pending": []}}
+
+        if not access_token:
+            return mock_txns
+
+        url = f"{self._aisp}/accounts/{account_id}/transactions"
+        headers = self._get_headers(access_token, consent_id)
+        headers["PSU-IP-Address"] = "127.0.0.1"  # signals user presence → bypasses frequencyPerDay
+
+        start = date_from or (date.today() - timedelta(days=120))
+        params: dict = {
+            "bookingStatus": "both",
+            "dateFrom":      start.isoformat(),
+            "limit":         100,
+            "page":          1,
+        }
+        if date_to:
+            params["dateTo"] = date_to.isoformat()
+
+        all_booked:  list = []
+        all_pending: list = []
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            while True:
+                try:
+                    resp = await client.get(url, headers=headers, params=params)
+                    resp.raise_for_status()
+                    body = resp.json()
+                except httpx.HTTPError as e:
+                    logger.warning(f"BT transactions failed ({e}), using mock")
+                    return mock_txns
+
+                txns = body.get("transactions", {})
+                all_booked  += txns.get("booked",  [])
+                all_pending += txns.get("pending", [])
+
+                # Follow pagination until no next link
+                next_href = body.get("_links", {}).get("next", {}).get("href")
+                if not next_href:
+                    break
+                params["page"] = params["page"] + 1
+
+        return {"transactions": {"booked": all_booked, "pending": all_pending}}
 
     # ── Factory ───────────────────────────────────────────────────────────────
 
@@ -217,9 +400,15 @@ class BTService:
             use_sandbox = getattr(s, "use_bt_sandbox", True)
             client_id = getattr(s, "bt_client_id", None)
             client_secret = getattr(s, "bt_client_secret", None)
-            base_url = getattr(s, "bt_base_url", "https://apistorebt.ro/bt/sb")
-            return cls(use_sandbox=use_sandbox, client_id=client_id,
+            base_url = getattr(s, "bt_base_url", "https://api.apistorebt.ro/bt/sb")
+            
+            # Allow redirect_uri to be configured via settings
+            svc = cls(use_sandbox=use_sandbox, client_id=client_id,
                        client_secret=client_secret, base_url=base_url)
+            redirect_uri = getattr(s, "bt_redirect_uri", None)
+            if redirect_uri:
+                svc.redirect_uri = redirect_uri
+            return svc
         except Exception:
             return cls(use_sandbox=True)
 

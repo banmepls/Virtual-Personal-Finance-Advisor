@@ -25,10 +25,11 @@ class Settings(BaseSettings):
 
     # Banca Transilvania Open Banking (PSD2)
     use_bt_sandbox: bool = True
-    bt_client_id: str = ""
-    bt_client_secret: str = ""
-    bt_base_url: str = "https://apistorebt.ro/bt/sb"
-    bt_oauth_url: str = "https://apistorebt.ro/bt/sb/oauth2"
+    bt_client_id: str = "sandbox_client_id"
+    bt_client_secret: str = "sandbox_client_secret"
+    bt_base_url: str = "https://api.apistorebt.ro/bt/sb"
+    bt_redirect_uri: str = "http://localhost:8001/api/v1/bank/oauth2/callback"
+    bt_frontend_redirect_uri: str = "http://localhost:3000/dashboard"
     
     # Load from .env
     model_config = SettingsConfigDict(

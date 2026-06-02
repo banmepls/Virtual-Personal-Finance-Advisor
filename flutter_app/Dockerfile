@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y curl git wget unzip gdb libstdc++6 libg
 RUN apt-get clean
 
 # Download Flutter SDK
-RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
+RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter -b stable --depth 1
 
 # Set flutter path
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
@@ -24,10 +24,8 @@ RUN flutter pub get
 COPY flutter_app/ .
 
 # Build the web app
-# We can pass the base URL as a build argument
-ARG API_BASE_URL=http://localhost:8000/api/v1
-RUN sed -i "s|http://localhost:8000/api/v1|$API_BASE_URL|g" lib/services/api_service.dart
-RUN flutter build web --release
+ARG API_BASE_URL=http://localhost:8001/api/v1
+RUN flutter build web --release --dart-define=API_BASE_URL=$API_BASE_URL
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:alpine

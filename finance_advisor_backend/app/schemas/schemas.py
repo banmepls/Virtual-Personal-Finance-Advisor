@@ -163,6 +163,7 @@ class BankConnectResponse(BaseModel):
     consent_id: str
     is_sandbox: bool
     message: str
+    auth_url: Optional[str] = None
 
 
 # ── Budget schemas ────────────────────────────────────────────────────────────

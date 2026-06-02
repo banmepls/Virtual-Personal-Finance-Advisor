@@ -1,28 +1,16 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  /// The base URL for the API. 
-  /// 1. Prioritizes --dart-define=API_BASE_URL=...
-  /// 2. If not provided, uses 10.0.2.2 for Android Emulators
-  /// 3. Fallback to localhost for Web/iOS/Desktop
+  /// Base URL resolution order:
+  /// 1. --dart-define=API_BASE_URL=...  (covers Android emulator, staging, etc.)
+  /// 2. localhost (web / iOS simulator / desktop)
   static String get baseUrl {
     const fromEnv = String.fromEnvironment('API_BASE_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
-
-    if (kIsWeb) return 'http://localhost:8000/api/v1';
-    
-    // Check for Android Emulator
-    try {
-      if (Platform.isAndroid) return 'http://10.0.2.2:8000/api/v1';
-    } catch (_) {
-      // Platform.isAndroid can throw on web if not careful, 
-      // though kIsWeb check above should catch it.
-    }
-    
-    return 'http://localhost:8000/api/v1';
+    // Fallback to PC's local network IP for physical Android device
+    return 'http://192.168.1.15:8001/api/v1';
   }
 
   String? _token;
@@ -139,6 +127,16 @@ class ApiService {
     final response = await http
         .post(Uri.parse('$baseUrl/bank/connect'), headers: _headers)
         .timeout(const Duration(seconds: 10));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> sandboxAuthorize() async {
+    final response = await http
+        .post(Uri.parse('$baseUrl/bank/sandbox-authorize'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('${response.statusCode}: ${response.body}');
+    }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
