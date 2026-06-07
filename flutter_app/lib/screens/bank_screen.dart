@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/bank_model.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../utils/money.dart';
+import '../widgets/empty_state.dart';
 
 class BankScreen extends StatefulWidget {
   const BankScreen({super.key});
@@ -23,14 +26,14 @@ class _BankScreenState extends State<BankScreen> {
   bool _usedRealApi = false;
   String _selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
 
-  static const _primary = Color(0xFF58A6FF);
-  static const _surface = Color(0xFF161B22);
-  static const _bg = Color(0xFF0D1117);
-  static const _border = Color(0xFF30363D);
-  static const _muted = Color(0xFF8B949E);
-  static const _green = Color(0xFF3FB950);
-  static const _red = Color(0xFFF85149);
-  static const _gold = Color(0xFFD29922);
+  static const _primary = AppColors.primary;
+  static const _surface = AppColors.surface;
+  static const _bg = AppColors.bg;
+  static const _border = AppColors.border;
+  static const _muted = AppColors.muted;
+  static const _green = AppColors.green;
+  static const _red = AppColors.red;
+  static const _gold = AppColors.gold;
 
   @override
   void initState() {
@@ -46,8 +49,18 @@ class _BankScreenState extends State<BankScreen> {
       final newAuthUrl = connectRes['auth_url']?.toString() ?? '';
       setState(() {
         _authUrl = newAuthUrl.isNotEmpty ? newAuthUrl : null;
-        if (_authUrl == null) _usedRealApi = connectRes['is_sandbox'] == false;
+        if (_authUrl == null) _usedRealApi = connectRes['is_sandbox'] == true;
       });
+
+      if (_authUrl != null) {
+        setState(() {
+          _loading = false;
+          _account = null;
+          _balance = null;
+          _transactions = [];
+        });
+        return;
+      }
 
       final accounts = await apiService.getBankAccounts();
       if (accounts.isNotEmpty) {
@@ -85,6 +98,26 @@ class _BankScreenState extends State<BankScreen> {
     }
   }
 
+  Future<void> _sandboxAutoConnect() async {
+    setState(() => _loading = true);
+    try {
+      await apiService.sandboxAutoConnect();
+      setState(() => _authUrl = null);
+      await _loadData();
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Auto-connect failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _sandboxAuthorize() async {
     setState(() => _loading = true);
     try {
@@ -99,6 +132,44 @@ class _BankScreenState extends State<BankScreen> {
             content: Text('Authorization failed: $e'),
             backgroundColor: _red,
           ),
+        );
+      }
+    }
+  }
+
+  Future<void> _disconnect() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _surface,
+        title: const Text('Disconnect BT Account',
+            style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'This will clear the stored connection. You can reconnect via sandbox auto-connect or by logging in through the browser.',
+          style: TextStyle(color: Color(0xFF8B949E)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF8B949E))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Disconnect', style: TextStyle(color: Color(0xFFF85149))),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _loading = true);
+    try {
+      await apiService.disconnectBank();
+      await _loadData();
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Disconnect failed: $e'), backgroundColor: _red),
         );
       }
     }
@@ -137,7 +208,9 @@ class _BankScreenState extends State<BankScreen> {
               ? _buildError()
               : _authUrl != null && _account == null
                   ? _buildAuthRequired()
-                  : RefreshIndicator(
+                  : _usedRealApi && _account == null
+                      ? _buildSandboxConnected()
+                      : RefreshIndicator(
                       onRefresh: _loadData,
                       color: _primary,
                       child: CustomScrollView(
@@ -154,12 +227,24 @@ class _BankScreenState extends State<BankScreen> {
                           ),
                         ),
                       ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (ctx, i) => _buildTransactionTile(_transactions[i]),
-                          childCount: _transactions.length,
+                      if (_transactions.isEmpty)
+                        SliverToBoxAdapter(
+                          child: EmptyState(
+                            icon: Icons.receipt_long,
+                            title: 'No transactions yet',
+                            message:
+                                'No transactions for this month. Tap sync to fetch the latest from your bank.',
+                            actionLabel: 'Sync now',
+                            onAction: _sync,
+                          ),
+                        )
+                      else
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (ctx, i) => _buildTransactionTile(_transactions[i]),
+                            childCount: _transactions.length,
+                          ),
                         ),
-                      ),
                       const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     ],
                   ),
@@ -212,6 +297,11 @@ class _BankScreenState extends State<BankScreen> {
                 onPressed: _sync,
                 tooltip: 'Sync from BT',
               ),
+        IconButton(
+          icon: const Icon(Icons.link_off, color: Color(0xFF8B949E)),
+          onPressed: _disconnect,
+          tooltip: 'Disconnect / Reconnect',
+        ),
       ],
     );
   }
@@ -250,8 +340,7 @@ class _BankScreenState extends State<BankScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            NumberFormat.currency(locale: 'ro_RO', symbol: 'RON ', decimalDigits: 2)
-                .format(balance),
+            Money.ron(balance),
             style: GoogleFonts.inter(
                 color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800),
           ),
@@ -357,16 +446,16 @@ class _BankScreenState extends State<BankScreen> {
                       child: Text(tx.category,
                           style: GoogleFonts.inter(
                               color: _categoryColor(tx.category),
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600)),
                     ),
                     if (tx.isRecurring) ...[
                       const SizedBox(width: 6),
-                      const Icon(Icons.repeat, color: _gold, size: 12),
+                      const Icon(Icons.repeat, color: _gold, size: 13),
                     ],
                     const SizedBox(width: 6),
                     Text(tx.bookingDate ?? '',
-                        style: GoogleFonts.inter(color: _muted, fontSize: 11)),
+                        style: GoogleFonts.inter(color: _muted, fontSize: 12)),
                   ],
                 ),
               ],
@@ -406,6 +495,98 @@ class _BankScreenState extends State<BankScreen> {
     );
   }
 
+  Widget _buildSandboxConnected() {
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _surface,
+        elevation: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.account_balance, color: _primary, size: 20),
+            const SizedBox(width: 8),
+            Text('Banca Transilvania',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: _primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _primary.withOpacity(0.6)),
+              ),
+              child: Text('BT SANDBOX',
+                  style: GoogleFonts.inter(color: _primary, fontSize: 9, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.link_off, color: Color(0xFF8B949E)),
+            onPressed: _disconnect,
+            tooltip: 'Disconnect',
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: _primary.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_user, color: _primary, size: 36),
+              ),
+              const SizedBox(height: 24),
+              Text('BT Sandbox Connected',
+                  style: GoogleFonts.inter(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(
+                'Your bank connected successfully, but this test bank has no sample accounts to display.',
+                style: GoogleFonts.inter(color: _muted, fontSize: 14, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap below to load demo data and explore the app.',
+                style: GoogleFonts.inter(color: _gold, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _sandboxAuthorize,
+                  icon: const Icon(Icons.account_balance, color: Colors.white),
+                  label: Text('Connect Demo Data',
+                      style: GoogleFonts.inter(
+                          color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: _disconnect,
+                icon: const Icon(Icons.link_off, color: _muted, size: 16),
+                label: Text('Disconnect', style: GoogleFonts.inter(color: _muted, fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAuthRequired() {
     return Center(
       child: Padding(
@@ -423,29 +604,26 @@ class _BankScreenState extends State<BankScreen> {
               child: const Icon(Icons.account_balance, color: _primary, size: 40),
             ),
             const SizedBox(height: 24),
-            Text('Bank Connection Required',
+            Text('Connect Your Bank',
                 style: GoogleFonts.inter(
                     color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Text(
-              _isRealAuthUrl
-                  ? 'Authenticate with your Banca Transilvania account to sync real sandbox data.'
-                  : 'Connect with demo data to explore the app features.',
-              style: GoogleFonts.inter(color: _muted, fontSize: 14),
+              'Connect a bank account to track your spending, budgets and subscriptions. '
+              'Use demo data to explore everything instantly.',
+              style: GoogleFonts.inter(color: _muted, fontSize: 14, height: 1.5),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
+            // ── Primary CTA: always the reliable demo path ──
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _isRealAuthUrl ? _launchAuthUrl : _sandboxAuthorize,
-                icon: Icon(
-                  _isRealAuthUrl ? Icons.open_in_browser : Icons.account_balance,
-                  color: Colors.white,
-                ),
+                onPressed: _sandboxAuthorize,
+                icon: const Icon(Icons.account_balance, color: Colors.white),
                 label: Text(
-                  _isRealAuthUrl ? 'Open BT Bank Login' : 'Connect Demo Data',
+                  'Connect Demo Data',
                   style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                 ),
@@ -455,31 +633,61 @@ class _BankScreenState extends State<BankScreen> {
                 ),
               ),
             ),
+            // ── Advanced (developer) options, collapsed by default ──
             if (_isRealAuthUrl) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: _sandboxAuthorize,
-                  icon: const Icon(Icons.account_balance, color: _primary),
-                  label: Text(
-                    'Connect Demo Data',
-                    style: GoogleFonts.inter(
-                        color: _primary, fontWeight: FontWeight.w600, fontSize: 16),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: _primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
               const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: _loadData,
-                icon: const Icon(Icons.refresh, color: _primary),
-                label: Text('I have completed authentication',
-                    style: GoogleFonts.inter(color: _primary)),
+              Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  iconColor: _muted,
+                  collapsedIconColor: _muted,
+                  title: Text('Advanced (developer) options',
+                      style: GoogleFonts.inter(color: _muted, fontSize: 13)),
+                  childrenPadding: const EdgeInsets.only(top: 4, bottom: 8),
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: OutlinedButton.icon(
+                        onPressed: _launchAuthUrl,
+                        icon: const Icon(Icons.open_in_browser, color: _primary, size: 18),
+                        label: Text('Open BT Bank Login',
+                            style: GoogleFonts.inter(
+                                color: _primary, fontWeight: FontWeight.w600)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: _primary),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: OutlinedButton.icon(
+                        onPressed: _sandboxAutoConnect,
+                        icon: const Icon(Icons.flash_on, color: _muted, size: 18),
+                        label: Text('Auto-connect (Sandbox OAuth2)',
+                            style: GoogleFonts.inter(
+                                color: _muted, fontWeight: FontWeight.w600)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: _border),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: _loadData,
+                      icon: const Icon(Icons.refresh, color: _muted, size: 16),
+                      label: Text('I have completed authentication',
+                          style: GoogleFonts.inter(color: _muted, fontSize: 13)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],

@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/budget_model.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../widgets/empty_state.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -17,14 +19,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
   String? _error;
   String _selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
 
-  static const _primary = Color(0xFF58A6FF);
-  static const _surface = Color(0xFF161B22);
-  static const _bg = Color(0xFF0D1117);
-  static const _border = Color(0xFF30363D);
-  static const _muted = Color(0xFF8B949E);
-  static const _green = Color(0xFF3FB950);
-  static const _red = Color(0xFFF85149);
-  static const _amber = Color(0xFFD29922);
+  static const _primary = AppColors.primary;
+  static const _surface = AppColors.surface;
+  static const _bg = AppColors.bg;
+  static const _border = AppColors.border;
+  static const _muted = AppColors.muted;
+  static const _green = AppColors.green;
+  static const _red = AppColors.red;
+  static const _amber = AppColors.gold;
 
   static const _categories = [
     'Food & Groceries', 'Transport', 'Utilities', 'Dining',
@@ -156,22 +158,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   color: _primary,
                   child: CustomScrollView(
                     slivers: [
-                      SliverAppBar(
-                        backgroundColor: _surface,
-                        pinned: true,
-                        elevation: 0,
-                        title: Row(children: [
-                          const Icon(Icons.pie_chart, color: _primary, size: 22),
-                          const SizedBox(width: 10),
-                          Text('Budget Manager',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
-                        ]),
-                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
                       SliverToBoxAdapter(child: _buildMonthSelector()),
                       SliverToBoxAdapter(child: _buildSummaryRow()),
                       if (_statusResponse?.budgets.isEmpty ?? true)
-                        SliverToBoxAdapter(child: _buildEmptyState())
+                        SliverToBoxAdapter(
+                          child: EmptyState(
+                            icon: Icons.savings_outlined,
+                            title: 'No budgets yet',
+                            message:
+                                'Set a monthly limit per category to track your spending.',
+                            actionLabel: 'Add Budget',
+                            onAction: _showAddBudgetDialog,
+                            accent: _primary,
+                          ),
+                        )
                       else
                         SliverList(
                           delegate: SliverChildBuilderDelegate(
@@ -324,24 +325,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     style: GoogleFonts.inter(color: _muted, fontSize: 11)),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          const Icon(Icons.savings_outlined, color: _muted, size: 56),
-          const SizedBox(height: 16),
-          Text('No budgets yet',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Text('Tap + Add Budget to set monthly spending limits per category.',
-              style: GoogleFonts.inter(color: _muted, fontSize: 13),
-              textAlign: TextAlign.center),
         ],
       ),
     );

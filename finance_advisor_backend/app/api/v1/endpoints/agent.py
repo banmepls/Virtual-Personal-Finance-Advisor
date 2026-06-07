@@ -4,7 +4,7 @@ app/api/v1/endpoints/agent.py
 FastAPI endpoint for interacting with the AI Agent Tori.
 Supports streaming or simple message-response cycles.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.agent.tori_agent import ask_tori
@@ -35,20 +35,19 @@ async def chat_with_tori(request: ChatRequest, db: AsyncSession = Depends(get_db
         history.append((role, msg.content))
 
     # 2. Get AI response
+    await save_message(db, request.user_id, "user", request.message)
     try:
-        # Save user message first
-        await save_message(db, request.user_id, "user", request.message)
-        
         reply = await ask_tori(request.message, request.user_id, history)
-        
-        # Save assistant message
-        await save_message(db, request.user_id, "assistant", reply)
-        
-        return ChatResponse(response=reply)
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error(f"Agent error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+        logging.getLogger(__name__).warning(f"Tori unavailable: {e}")
+        reply = (
+            "I'm temporarily unavailable because I can't reach the AI service right now. "
+            "Please check your internet connection and try again. "
+            "In the meantime, you can still view your transactions, budgets, and spending summary in the dashboard."
+        )
+    await save_message(db, request.user_id, "assistant", reply)
+    return ChatResponse(response=reply)
 
 @router.get("/history/{user_id}")
 async def fetch_history(user_id: int, db: AsyncSession = Depends(get_db)):

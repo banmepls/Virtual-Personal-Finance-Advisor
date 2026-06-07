@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'screens/auth_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'services/api_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await apiService.restoreSession();
   runApp(const FinanceAdvisorApp());
 }
 
@@ -21,7 +25,10 @@ class FinanceAdvisorApp extends StatelessWidget {
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         useMaterial3: true,
       ),
-      home: const DashboardScreen(),
+      // Skip the login screen if a session was restored from disk.
+      home: apiService.isLoggedIn
+          ? const DashboardScreen(initialIndex: 0)
+          : const AuthScreen(),
     );
   }
 }

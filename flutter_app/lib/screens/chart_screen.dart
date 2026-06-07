@@ -18,6 +18,7 @@ class _ChartScreenState extends State<ChartScreen> {
   List<dynamic> _history = [];
   bool _loadingQuote = false;
   bool _loadingHistory = false;
+  String? _error;
 
   @override
   void initState() {
@@ -33,27 +34,30 @@ class _ChartScreenState extends State<ChartScreen> {
     setState(() {
       _loadingQuote = true;
       _loadingHistory = true;
+      _error = null;
     });
     try {
       // 1. Fetch current quote
       final q = await apiService.getQuote(symbol);
       if (!mounted) return;
-      
+
       // 2. Fetch 30-day history
       final h = await apiService.getStockHistory(symbol);
-      
+
       if (!mounted) return;
       setState(() {
         _quote = q;
         _history = h;
         _loadingQuote = false;
         _loadingHistory = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _loadingQuote = false;
         _loadingHistory = false;
+        _error = e.toString();
       });
     }
   }
@@ -171,6 +175,27 @@ class _ChartScreenState extends State<ChartScreen> {
           Expanded(
             child: (_loadingQuote || _loadingHistory)
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF58A6FF)))
+                : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.show_chart, color: Color(0xFF8B949E), size: 44),
+                        const SizedBox(height: 12),
+                        Text('Could not load chart data',
+                            style: GoogleFonts.inter(color: Colors.white, fontSize: 15)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _selectedSymbol == null
+                              ? null
+                              : () => _fetchQuote(_selectedSymbol!),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF238636)),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
                 : Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

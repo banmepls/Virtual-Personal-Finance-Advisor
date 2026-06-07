@@ -14,7 +14,7 @@ from typing import Any
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 import bcrypt
-from jose import JWTError, jwt
+from jose import jwt
 
 from app.core.config import get_settings
 
@@ -43,13 +43,6 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
 
-
-def verify_token(token: str) -> dict[str, Any] | None:
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        return None
 
 
 # ── AES-256-GCM Field Encryption ─────────────────────────────────────────────

@@ -9,16 +9,15 @@ import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, String
+from sqlalchemy import select, String
 
 from app.core.database import get_db
 from app.models.bank_connection import BTConnection
 from app.models.bank_transaction import BankTransaction
 from app.services.bt_service import bt_service
-from app.core.config import get_settings
 from app.services.expense_categorizer import (
     categorize_transaction, detect_recurring,
     get_spending_by_category, extract_subscriptions,
@@ -55,8 +54,9 @@ async def connect_bank(user_id: int = DEFAULT_USER_ID, db: AsyncSession = Depend
 
     result = await db.execute(
         select(BTConnection).where(BTConnection.user_id == user_id, BTConnection.is_active == True)
+        .order_by(BTConnection.updated_at.desc())
     )
-    existing = result.scalar_one_or_none()
+    existing = result.scalars().first()
     if existing and existing.access_token:
         # Check whether the user explicitly chose demo mode via sandbox-authorize
         _explicit_demo = False
@@ -100,9 +100,9 @@ async def connect_bank(user_id: int = DEFAULT_USER_ID, db: AsyncSession = Depend
 
     # Upsert connection record
     result2 = await db.execute(
-        select(BTConnection).where(BTConnection.user_id == user_id)
+        select(BTConnection).where(BTConnection.user_id == user_id).order_by(BTConnection.updated_at.desc())
     )
-    conn = result2.scalar_one_or_none()
+    conn = result2.scalars().first()
     if conn:
         conn.consent_id = consent_id
         conn.is_active  = True
@@ -127,6 +127,89 @@ async def connect_bank(user_id: int = DEFAULT_USER_ID, db: AsyncSession = Depend
         message="🔗 BT consent created. Please complete the OAuth2 authorization.",
         auth_url=auth_url,
     )
+
+@router.post("/disconnect")
+async def disconnect_bank(user_id: int = DEFAULT_USER_ID, db: AsyncSession = Depends(get_db)):
+    """Clear the stored BT connection so the user can re-authorize from scratch."""
+    result = await db.execute(
+        select(BTConnection).where(BTConnection.user_id == user_id)
+        .order_by(BTConnection.updated_at.desc())
+    )
+    conn = result.scalars().first()
+    if conn:
+        conn.access_token      = None
+        conn.refresh_token     = None
+        conn.token_expires_at  = None
+        conn.consent_id        = None
+        conn.selected_accounts = None
+        conn.is_active         = False
+        await db.commit()
+    return {"status": "disconnected"}
+
+
+@router.post("/sandbox-auto-connect")
+async def sandbox_auto_connect(user_id: int = DEFAULT_USER_ID, db: AsyncSession = Depends(get_db)):
+    """
+    Programmatically complete the BT sandbox OAuth2 flow without any browser interaction.
+
+    BT's sandbox consent/accounts endpoint (AISPGetAccounts) returns HTTP 500 for
+    arbitrary usernames, causing the Angular consent UI to always error out.
+    This endpoint bypasses that broken step entirely and returns the app straight
+    to a connected state using a real sandbox access token.
+    """
+    _placeholder_ids = {"sandbox_client_id", "", None}
+    if bt_service.client_id in _placeholder_ids or bt_service.client_secret in _placeholder_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="BT credentials not configured. Set BT_CLIENT_ID and BT_CLIENT_SECRET in .env",
+        )
+
+    try:
+        token_data = await bt_service.sandbox_auto_authorize()
+    except Exception as e:
+        logger.error(f"sandbox_auto_authorize failed: {e}")
+        raise HTTPException(status_code=502, detail=f"BT sandbox auto-connect failed: {e}")
+
+    access_token  = token_data.get("access_token")
+    refresh_token = token_data.get("refresh_token")
+    expires_in    = token_data.get("expires_in", 3600)
+    consent_id    = token_data.get("consent_id")
+
+    if not access_token:
+        raise HTTPException(status_code=502, detail="BT sandbox returned no access_token")
+
+    result = await db.execute(
+        select(BTConnection).where(BTConnection.user_id == user_id).order_by(BTConnection.updated_at.desc())
+    )
+    conn = result.scalars().first()
+    if conn:
+        conn.consent_id       = consent_id
+        conn.access_token     = access_token
+        conn.refresh_token    = refresh_token
+        conn.token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+        conn.is_active        = True
+        conn.is_sandbox       = True
+        conn.selected_accounts = None
+    else:
+        conn = BTConnection(
+            user_id=user_id,
+            consent_id=consent_id,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_expires_at=datetime.now(timezone.utc) + timedelta(seconds=expires_in),
+            is_active=True,
+            is_sandbox=True,
+        )
+        db.add(conn)
+    await db.commit()
+
+    return {
+        "status": "connected",
+        "message": "BT sandbox account connected automatically",
+        "consent_id": consent_id,
+        "expires_in": expires_in,
+    }
+
 
 @router.get("/sandbox-login", response_class=HTMLResponse)
 async def sandbox_login(
@@ -285,6 +368,7 @@ async def sandbox_authorize(user_id: int = DEFAULT_USER_ID, db: AsyncSession = D
     conn.access_token = "mock_access_token_123"
     conn.refresh_token = "mock_refresh_token_123"
     conn.token_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+    conn.is_sandbox = False  # local demo mode — NOT a real BT connection
     # Mark as explicitly chosen demo mode so connect_bank doesn't clear it
     conn.selected_accounts = json.dumps({"_demo_mode": True})
     await db.commit()
@@ -310,6 +394,8 @@ async def get_accounts(user_id: int = DEFAULT_USER_ID, db: AsyncSession = Depend
             currency=acc.get("currency", "RON"),
             name=acc.get("name", ""),
             status=acc.get("status", "enabled"),
+            product=acc.get("product"),
+            cash_account_type=acc.get("cashAccountType"),
         ))
     return accounts
 
@@ -334,8 +420,10 @@ async def get_balances(account_id: str, user_id: int = DEFAULT_USER_ID,
             balance_type=b.get("balanceType", ""),
             balance_amount=BankBalanceAmount(
                 currency=amt.get("currency", "RON"),
-                amount=amt.get("amount", "0.00"),
+                amount=str(amt.get("amount", "0.00")),
             ),
+            credit_limit_included=b.get("creditLimitIncluded"),
+            reference_date=b.get("referenceDate"),
         ))
     return BankBalanceResponse(account_id=account_id, iban=iban, balances=balances)
 
@@ -516,8 +604,9 @@ async def get_subscriptions(user_id: int = DEFAULT_USER_ID, db: AsyncSession = D
 async def _get_connection(user_id: int, db: AsyncSession) -> BTConnection:
     result = await db.execute(
         select(BTConnection).where(BTConnection.user_id == user_id, BTConnection.is_active == True)
+        .order_by(BTConnection.updated_at.desc())
     )
-    conn = result.scalar_one_or_none()
+    conn = result.scalars().first()
     if not conn:
         # Auto-create sandbox connection
         consent_data = await bt_service.create_consent(user_id)

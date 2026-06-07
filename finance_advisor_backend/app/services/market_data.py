@@ -7,7 +7,6 @@ Alpha Vantage market data service with:
  - Hard 25 req/day quota enforcement
  - Mock fallback when USE_MOCK_DATA=true or quota exceeded
 """
-import os
 import logging
 import httpx
 from app.core.config import get_settings

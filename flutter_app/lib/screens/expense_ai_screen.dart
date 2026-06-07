@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../utils/money.dart';
+import '../widgets/generative_ui.dart';
+import '../widgets/treemap_chart.dart';
+import '../widgets/empty_state.dart';
 
 class ExpenseAIScreen extends StatefulWidget {
   const ExpenseAIScreen({super.key});
@@ -21,13 +25,12 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
   bool _loadingInsight = false;
   String? _error;
   String _selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
-  int _touchedIndex = -1;
 
-  static const _primary = Color(0xFF58A6FF);
-  static const _surface = Color(0xFF161B22);
-  static const _bg = Color(0xFF0D1117);
-  static const _border = Color(0xFF30363D);
-  static const _muted = Color(0xFF8B949E);
+  static const _primary = AppColors.primary;
+  static const _surface = AppColors.surface;
+  static const _bg = AppColors.bg;
+  static const _border = AppColors.border;
+  static const _muted = AppColors.muted;
 
   final _chartColors = const [
     Color(0xFF58A6FF),
@@ -101,23 +104,23 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
                   color: _primary,
                   child: CustomScrollView(
                     slivers: [
-                      SliverAppBar(
-                        backgroundColor: _surface,
-                        pinned: true,
-                        elevation: 0,
-                        title: Row(children: [
-                          const Icon(Icons.auto_graph, color: _primary, size: 22),
-                          const SizedBox(width: 10),
-                          Text('Expense Analysis',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
-                        ]),
-                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
                       SliverToBoxAdapter(child: _buildMonthSelector()),
-                      SliverToBoxAdapter(child: _buildStatsRow()),
-                      SliverToBoxAdapter(child: _buildDonutCard()),
-                      SliverToBoxAdapter(child: _buildCategoryList()),
-                      SliverToBoxAdapter(child: _buildAIInsightCard()),
+                      if (_categories.isEmpty)
+                        const SliverToBoxAdapter(
+                          child: EmptyState(
+                            icon: Icons.pie_chart_outline,
+                            title: 'No spending this month',
+                            message:
+                                'Sync your bank transactions to see a category breakdown and AI insights.',
+                          ),
+                        )
+                      else ...[
+                        SliverToBoxAdapter(child: _buildStatsRow()),
+                        SliverToBoxAdapter(child: _buildDonutCard()),
+                        SliverToBoxAdapter(child: _buildCategoryList()),
+                        SliverToBoxAdapter(child: _buildAIInsightCard()),
+                      ],
                       const SliverToBoxAdapter(child: SizedBox(height: 32)),
                     ],
                   ),
@@ -176,7 +179,7 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
       ),
       child: Row(
         children: [
-          Expanded(child: _stat('Total Spent', '${_totalSpent.toStringAsFixed(0)} RON', _primary)),
+          Expanded(child: _stat('Total Spent', Money.ronCompact(_totalSpent), _primary)),
           Expanded(child: _stat('Categories', '${_categories.length}', const Color(0xFFD29922))),
           Expanded(child: _stat('Top Spend', _topCategory, const Color(0xFFBC8CFF))),
         ],
@@ -198,6 +201,17 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
     if (_categories.isEmpty) return const SizedBox();
     final entries = _categories.entries.toList();
 
+    final tiles = entries.asMap().entries.map((e) {
+      final color = _chartColors[e.key % _chartColors.length];
+      final pct = _totalSpent > 0 ? (e.value.value / _totalSpent * 100) : 0;
+      return TreemapTile(
+        label: e.value.key,
+        value: e.value.value,
+        color: color,
+        sublabel: '${e.value.value.toStringAsFixed(0)} RON (${pct.toStringAsFixed(0)}%)',
+      );
+    }).toList();
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       padding: const EdgeInsets.all(20),
@@ -207,55 +221,13 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
         border: Border.all(color: _border),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Spending by Category',
               style: GoogleFonts.inter(
                   color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                pieTouchData: PieTouchData(
-                  touchCallback: (event, response) {
-                    setState(() {
-                      if (!event.isInterestedForInteractions ||
-                          response == null ||
-                          response.touchedSection == null) {
-                        _touchedIndex = -1;
-                        return;
-                      }
-                      _touchedIndex = response.touchedSection!.touchedSectionIndex;
-                    });
-                  },
-                ),
-                sections: entries.asMap().entries.map((e) {
-                  final isTouched = e.key == _touchedIndex;
-                  final color = _chartColors[e.key % _chartColors.length];
-                  final pct = _totalSpent > 0 ? (e.value.value / _totalSpent * 100) : 0;
-                  return PieChartSectionData(
-                    value: e.value.value,
-                    color: color,
-                    radius: isTouched ? 90 : 75,
-                    title: isTouched ? '${pct.toStringAsFixed(1)}%' : '',
-                    titleStyle: GoogleFonts.inter(
-                        color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                    badgeWidget: !isTouched ? null : Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                          color: _bg, borderRadius: BorderRadius.circular(8)),
-                      child: Text(e.value.key,
-                          style: GoogleFonts.inter(color: color, fontSize: 10)),
-                    ),
-                    badgePositionPercentageOffset: 1.1,
-                  );
-                }).toList(),
-                sectionsSpace: 2,
-                centerSpaceRadius: 45,
-                centerSpaceColor: _bg,
-              ),
-            ),
-          ),
+          const SizedBox(height: 16),
+          TreemapChart(tiles: tiles, height: 240),
         ],
       ),
     );
@@ -361,16 +333,53 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
               style: GoogleFonts.inter(color: _muted, fontSize: 13),
             )
           else
-            MarkdownBody(
-              data: _aiSummary,
-              styleSheet: MarkdownStyleSheet(
-                p: GoogleFonts.inter(color: Colors.white70, fontSize: 13, height: 1.5),
-                listBullet: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-                strong: GoogleFonts.inter(
-                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
+            _buildParsedContent(_aiSummary),
         ],
+      ),
+    );
+  }
+
+  Widget _buildParsedContent(String content) {
+    List<Widget> children = [];
+    final regex = RegExp(r'```(?:widget|json)?\s*(\{.*?\})\s*```', dotAll: true);
+    final matches = regex.allMatches(content);
+    int lastMatchEnd = 0;
+
+    for (final match in matches) {
+      if (match.start > lastMatchEnd) {
+        final text = content.substring(lastMatchEnd, match.start).trim();
+        if (text.isNotEmpty) {
+          children.add(_buildMarkdownText(text));
+        }
+      }
+      final jsonStr = match.group(1) ?? '';
+      if (jsonStr.isNotEmpty) {
+        children.add(GenerativeWidgetBuilder.buildFromJson(jsonStr));
+      }
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < content.length) {
+      final text = content.substring(lastMatchEnd).trim();
+      if (text.isNotEmpty) {
+        children.add(_buildMarkdownText(text));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children.isEmpty ? [_buildMarkdownText(content)] : children,
+    );
+  }
+
+  Widget _buildMarkdownText(String text) {
+    return MarkdownBody(
+      data: text,
+      styleSheet: MarkdownStyleSheet(
+        p: GoogleFonts.inter(color: Colors.white70, fontSize: 13, height: 1.5),
+        listBullet: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
+        strong: GoogleFonts.inter(
+            color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
   }

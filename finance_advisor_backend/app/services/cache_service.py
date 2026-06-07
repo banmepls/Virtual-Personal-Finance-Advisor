@@ -7,11 +7,10 @@ Two-tier caching layer:
 
 Also enforces the Alpha Vantage 25 req/day quota policy.
 """
-import json
 import time
 import logging
 from collections import OrderedDict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Any
 
 logger = logging.getLogger(__name__)

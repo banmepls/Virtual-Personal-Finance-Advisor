@@ -17,7 +17,7 @@ import asyncio
 import time
 import logging
 from enum import Enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Awaitable
 
 logger = logging.getLogger(__name__)

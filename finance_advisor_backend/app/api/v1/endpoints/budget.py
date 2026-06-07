@@ -9,7 +9,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, String
+from sqlalchemy import select, String
 
 from app.core.database import get_db
 from app.models.budget import Budget

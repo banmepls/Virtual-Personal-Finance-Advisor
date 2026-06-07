@@ -4,7 +4,7 @@ app/agent/memory.py
 DB-backed conversation history for the Tori AI Agent.
 Uses SQLAlchemy async to store and retrieve chat messages.
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime, timezone
 from app.core.database import Base

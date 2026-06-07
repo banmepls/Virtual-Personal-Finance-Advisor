@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     # API Keys
     etoro_api_key: str = ""
     etoro_user_key: str = ""
-    etoro_base_url: str = "https://api.etoro.com"
+    etoro_base_url: str = "https://public-api.etoro.com"
     etoro_env: str = "demo"
     etoro_username: str = "demo_user"
 

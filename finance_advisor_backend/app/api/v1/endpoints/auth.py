@@ -11,7 +11,7 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.models.user import User
 from app.models.bank_connection import BTConnection
 from app.services.bt_service import bt_service
-from app.schemas.schemas import UserRegisterRequest, UserLoginRequest, TokenResponse, UserResponse, UserRegisterResponse
+from app.schemas.schemas import UserRegisterRequest, UserLoginRequest, TokenResponse, UserRegisterResponse
 import logging
 
 logger = logging.getLogger(__name__)

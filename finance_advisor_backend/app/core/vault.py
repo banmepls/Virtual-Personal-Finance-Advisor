@@ -1,7 +1,6 @@
 import os
 import logging
 import hvac
-from cryptography.fernet import Fernet
 import base64
 
 logger = logging.getLogger(__name__)

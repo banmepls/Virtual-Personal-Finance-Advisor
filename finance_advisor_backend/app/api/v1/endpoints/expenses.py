@@ -10,7 +10,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, String
+from sqlalchemy import select, String
 
 from app.core.database import get_db
 from app.models.bank_transaction import BankTransaction
@@ -105,12 +105,18 @@ async def expense_insights(
 
     try:
         from app.agent.tori_agent import ask_tori
+        from app.agent.memory import save_message
         prompt = (
             f"Based on the following spending data for {month_year}, provide a concise financial "
             f"analysis in 3-4 bullet points with actionable advice:\n\n{summary_text}\n\n"
             f"Be specific. Focus on categories that exceed budget or show high spending."
         )
         ai_summary = await ask_tori(prompt, user_id)
+        
+        # Save to chat history for visibility in the Chat tab
+        display_prompt = f"Please provide an analysis of my spending for {month_year}."
+        await save_message(db, user_id, "user", display_prompt)
+        await save_message(db, user_id, "assistant", ai_summary)
     except Exception as e:
         logger.warning(f"Tori AI unavailable: {e}")
         ai_summary = summary_text  # Fallback to rule-based text

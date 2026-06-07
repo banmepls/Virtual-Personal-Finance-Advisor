@@ -4,7 +4,6 @@ app/models/bank_connection.py
 Stores Banca Transilvania PSD2 OAuth2 consent/token data per user.
 """
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
-from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime, timezone
 
 from app.core.database import Base

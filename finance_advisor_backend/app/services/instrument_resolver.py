@@ -111,14 +111,15 @@ def resolve(instrument_id: int) -> dict:
         return result
 
     logger.warning(f"[InstrumentResolver] Unknown instrument_id={instrument_id}, using fallback")
-    fallback = {
+    # NOTE: do NOT cache the fallback — leaving it unmapped lets _enrich_positions
+    # retry the eToro metadata lookup on the next portfolio fetch (auto-heal),
+    # instead of permanently showing "Unknown Instrument #id".
+    return {
         "instrument_id": instrument_id,
         "symbol": f"ID_{instrument_id}",
         "name": f"Unknown Instrument #{instrument_id}",
         "asset_class": "Unknown",
     }
-    _runtime_cache[instrument_id] = fallback
-    return fallback
 
 
 def register(instrument_id: int, symbol: str, name: str, asset_class: str):

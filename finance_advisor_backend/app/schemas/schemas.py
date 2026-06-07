@@ -1,5 +1,5 @@
 """Pydantic schemas for API request/response validation."""
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime, date
 
@@ -108,6 +108,8 @@ class BankAccountResponse(BaseModel):
     currency: str
     name: str
     status: str
+    product: Optional[str] = None
+    cash_account_type: Optional[str] = None
 
 
 class BankBalanceAmount(BaseModel):
@@ -118,6 +120,8 @@ class BankBalanceAmount(BaseModel):
 class BankBalanceItem(BaseModel):
     balance_type: str
     balance_amount: BankBalanceAmount
+    credit_limit_included: Optional[bool] = None
+    reference_date: Optional[str] = None
 
 
 class BankBalanceResponse(BaseModel):

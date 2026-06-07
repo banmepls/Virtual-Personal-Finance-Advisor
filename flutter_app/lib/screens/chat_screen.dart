@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/api_service.dart';
+import '../widgets/generative_ui.dart';
 
 class ChatScreen extends StatefulWidget {
   final int userId;
@@ -13,6 +14,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<Map<String, String>> _messages = [];
   bool _loading = false;
 
@@ -20,6 +22,38 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom({bool animate = true}) {
+    void jump() {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (animate) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    }
+
+    // Markdown text and generative widgets settle their height across a few
+    // layout passes, so maxScrollExtent grows after the first frame. Jump once
+    // post-frame, then re-pin to the true bottom after content settles.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      jump();
+      Future.delayed(const Duration(milliseconds: 200), jump);
+      Future.delayed(const Duration(milliseconds: 450), jump);
+    });
   }
 
   Future<void> _loadHistory() async {
@@ -30,6 +64,8 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages.add({'role': msg['role'], 'content': msg['content']});
         }
       });
+      // On first load, jump straight to the bottom (no scroll animation).
+      _scrollToBottom(animate: false);
     } catch (e) {
       // Handle error gracefully
     }
@@ -45,12 +81,14 @@ class _ChatScreenState extends State<ChatScreen> {
       _loading = true;
     });
 
+    _scrollToBottom();
     try {
       final response = await apiService.chatWithTori(widget.userId, text);
       setState(() {
         _messages.add({'role': 'assistant', 'content': response['response']});
         _loading = false;
       });
+      _scrollToBottom();
     } catch (e) {
       setState(() {
         _messages.add({
@@ -59,6 +97,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         _loading = false;
       });
+      _scrollToBottom();
     }
   }
 
@@ -82,6 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
@@ -100,6 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF58A6FF)),
               ),
             ),
+          _buildSuggestions(),
           _buildInputArea(),
         ],
       ),
@@ -107,6 +148,32 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildChatBubble(String content, bool isUser) {
+    List<Widget> children = [];
+    final regex = RegExp(r'```(?:widget|json)?\s*(\{.*?\})\s*```', dotAll: true);
+    final matches = regex.allMatches(content);
+    int lastMatchEnd = 0;
+
+    for (final match in matches) {
+      if (match.start > lastMatchEnd) {
+        final text = content.substring(lastMatchEnd, match.start).trim();
+        if (text.isNotEmpty) {
+          children.add(_buildMarkdownText(text));
+        }
+      }
+      final jsonStr = match.group(1) ?? '';
+      if (jsonStr.isNotEmpty) {
+        children.add(GenerativeWidgetBuilder.buildFromJson(jsonStr));
+      }
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < content.length) {
+      final text = content.substring(lastMatchEnd).trim();
+      if (text.isNotEmpty) {
+        children.add(_buildMarkdownText(text));
+      }
+    }
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -120,14 +187,54 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           border: Border.all(color: const Color(0xFF30363D)),
         ),
-        child: MarkdownBody(
-          data: content,
-          styleSheet: MarkdownStyleSheet(
-            p: GoogleFonts.inter(color: Colors.white, fontSize: 15),
-            strong: GoogleFonts.inter(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-            listBullet: GoogleFonts.inter(color: Colors.white, fontSize: 15),
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children.isEmpty ? [_buildMarkdownText(content)] : children,
         ),
+      ),
+    );
+  }
+
+  Widget _buildMarkdownText(String text) {
+    return MarkdownBody(
+      data: text,
+      styleSheet: MarkdownStyleSheet(
+        p: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+        strong: GoogleFonts.inter(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+        listBullet: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+      ),
+    );
+  }
+
+  Widget _buildSuggestions() {
+    final List<String> suggestions = [
+      "Adjust my Dining budget to 500 RON",
+      "Show me my recent transactions",
+      "Did I overspend this month?",
+      "Set a new budget for Groceries",
+    ];
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: suggestions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final text = suggestions[index];
+          return ActionChip(
+            label: Text(text, style: GoogleFonts.inter(color: Colors.white, fontSize: 13)),
+            backgroundColor: const Color(0xFF21262D),
+            side: const BorderSide(color: Color(0xFF30363D)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            onPressed: () {
+              _controller.text = text;
+              _controller.selection = TextSelection.fromPosition(TextPosition(offset: text.length));
+            },
+          );
+        },
       ),
     );
   }

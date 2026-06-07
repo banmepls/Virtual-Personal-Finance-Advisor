@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   /// Base URL resolution order:
@@ -14,6 +14,10 @@ class ApiService {
   }
 
   String? _token;
+  int? userId;
+  String? username;
+
+  bool get isLoggedIn => _token != null;
 
   void setToken(String token) {
     _token = token;
@@ -25,6 +29,50 @@ class ApiService {
       };
 
   // ── Auth ──────────────────────────────────────────────────────────────────
+  /// Decode the JWT payload to extract user id (`sub`) and `username`.
+  void _decodeToken(String token) {
+    _token = token;
+    try {
+      final parts = token.split('.');
+      if (parts.length >= 2) {
+        var payload = parts[1];
+        payload += '=' * ((4 - payload.length % 4) % 4);
+        final map =
+            jsonDecode(utf8.decode(base64Url.decode(payload))) as Map<String, dynamic>;
+        userId = int.tryParse(map['sub']?.toString() ?? '');
+        username = map['username']?.toString();
+      }
+    } catch (_) {/* non-fatal */}
+  }
+
+  Future<void> _persistSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_token != null) await prefs.setString('auth_token', _token!);
+    if (userId != null) await prefs.setInt('user_id', userId!);
+    if (username != null) await prefs.setString('username', username!);
+  }
+
+  /// Restore a previous session from disk (called at app startup).
+  Future<void> restoreSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final t = prefs.getString('auth_token');
+    if (t != null && t.isNotEmpty) {
+      _token = t;
+      userId = prefs.getInt('user_id');
+      username = prefs.getString('username');
+    }
+  }
+
+  Future<void> logout() async {
+    _token = null;
+    userId = null;
+    username = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_id');
+    await prefs.remove('username');
+  }
+
   Future<Map<String, dynamic>> login(String username, String password) async {
     final response = await http
         .post(
@@ -34,8 +82,11 @@ class ApiService {
         )
         .timeout(const Duration(seconds: 10));
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode == 200) {
-      _token = data['access_token'];
+    if (response.statusCode == 200 && data['access_token'] != null) {
+      _decodeToken(data['access_token']);
+      await _persistSession();
+    } else {
+      throw Exception(data['detail']?.toString() ?? 'Login failed');
     }
     return data;
   }
@@ -49,7 +100,11 @@ class ApiService {
           body: jsonEncode({'username': username, 'email': email, 'password': password}),
         )
         .timeout(const Duration(seconds: 10));
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(data['detail']?.toString() ?? 'Registration failed');
+    }
+    return data;
   }
 
   // ── Portfolio ─────────────────────────────────────────────────────────────
@@ -134,6 +189,22 @@ class ApiService {
     final response = await http
         .post(Uri.parse('$baseUrl/bank/sandbox-authorize'), headers: _headers)
         .timeout(const Duration(seconds: 10));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('${response.statusCode}: ${response.body}');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<void> disconnectBank() async {
+    await http
+        .post(Uri.parse('$baseUrl/bank/disconnect'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+  }
+
+  Future<Map<String, dynamic>> sandboxAutoConnect() async {
+    final response = await http
+        .post(Uri.parse('$baseUrl/bank/sandbox-auto-connect'), headers: _headers)
+        .timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('${response.statusCode}: ${response.body}');
     }

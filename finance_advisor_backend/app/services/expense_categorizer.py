@@ -5,7 +5,6 @@ AI-powered transaction categorization using Google Gemini,
 with keyword fallback to avoid API quota waste.
 Also handles recurring / subscription detection.
 """
-import re
 from collections import defaultdict
 from datetime import date
 import logging

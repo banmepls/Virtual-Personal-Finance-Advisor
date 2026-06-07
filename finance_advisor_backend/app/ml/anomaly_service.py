@@ -83,15 +83,3 @@ def analyze_portfolio(positions: list[dict]) -> VotingResult:
     return result
 
 
-def retrain(historical_snapshots: list[list[dict]]):
-    """
-    Retrain all models on real historical portfolio data.
-    Call this when enough historical data has been accumulated.
-    """
-    global _models_trained
-    X = np.array([_portfolio_to_features(snap) for snap in historical_snapshots])
-    _if_model.train(X)
-    _ae_model.train(X)
-    _svm_model.train(X)
-    _models_trained = True
-    logger.info(f"[AnomalyService] Models retrained on {len(X)} historical snapshots")

@@ -17,7 +17,31 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
   bool _loading = false;
   String? _error;
 
+  @override
+  void didUpdateWidget(covariant AnomalyScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Auto-analyze once positions become available (e.g. after portfolio loads).
+    if (_result == null &&
+        !_loading &&
+        oldWidget.positions.isEmpty &&
+        widget.positions.isNotEmpty) {
+      _analyze();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.positions.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _analyze());
+    }
+  }
+
   Future<void> _analyze() async {
+    if (widget.positions.isEmpty) {
+      setState(() => _error = 'No portfolio positions to analyze yet.');
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -62,27 +86,50 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
             style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 12),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _loading ? null : _analyze,
-              icon: _loading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.radar),
-              label: Text(_loading ? 'Analyzing...' : 'Analyze Portfolio'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1F6FEB),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+          if (widget.positions.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B22),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF30363D)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Color(0xFF8B949E), size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Load your portfolio first — open Home to fetch positions, then come back to analyze.',
+                      style: GoogleFonts.inter(
+                          color: const Color(0xFF8B949E), fontSize: 13, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _loading ? null : _analyze,
+                icon: _loading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.radar),
+                label: Text(_loading ? 'Analyzing...' : 'Re-analyze Portfolio'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1F6FEB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
               ),
             ),
-          ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Container(
@@ -92,9 +139,25 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFF85149).withOpacity(0.4)),
               ),
-              child: Text(_error!,
-                  style: GoogleFonts.inter(
-                      color: const Color(0xFFF85149), fontSize: 13)),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Color(0xFFF85149), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(_error!,
+                        style: GoogleFonts.inter(
+                            color: const Color(0xFFF85149), fontSize: 13)),
+                  ),
+                  if (widget.positions.isNotEmpty)
+                    TextButton(
+                      onPressed: _loading ? null : _analyze,
+                      child: Text('Retry',
+                          style: GoogleFonts.inter(
+                              color: const Color(0xFF58A6FF),
+                              fontWeight: FontWeight.w600)),
+                    ),
+                ],
+              ),
             ),
           ],
           if (_result != null) ...[

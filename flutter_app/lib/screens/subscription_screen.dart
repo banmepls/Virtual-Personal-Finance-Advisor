@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/bank_model.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../utils/money.dart';
+import '../widgets/empty_state.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -17,13 +20,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   double get _monthlyTotal =>
       _subscriptions.fold(0, (sum, s) => sum + s.amount);
 
-  static const _primary = Color(0xFF58A6FF);
-  static const _surface = Color(0xFF161B22);
-  static const _bg = Color(0xFF0D1117);
-  static const _border = Color(0xFF30363D);
-  static const _muted = Color(0xFF8B949E);
-  static const _purple = Color(0xFFBC8CFF);
-  static const _red = Color(0xFFF85149);
+  static const _primary = AppColors.primary;
+  static const _surface = AppColors.surface;
+  static const _bg = AppColors.bg;
+  static const _border = AppColors.border;
+  static const _purple = AppColors.purple;
+  static const _red = AppColors.red;
 
   @override
   void initState() {
@@ -63,21 +65,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   color: _primary,
                   child: CustomScrollView(
                     slivers: [
-                      SliverAppBar(
-                        backgroundColor: _surface,
-                        pinned: true,
-                        elevation: 0,
-                        title: Row(children: [
-                          const Icon(Icons.subscriptions, color: _purple, size: 22),
-                          const SizedBox(width: 10),
-                          Text('Subscriptions',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
-                        ]),
-                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
                       SliverToBoxAdapter(child: _buildSummaryCard()),
                       if (_subscriptions.isEmpty)
-                        SliverToBoxAdapter(child: _buildEmpty())
+                        const SliverToBoxAdapter(
+                          child: EmptyState(
+                            icon: Icons.check_circle_outline,
+                            title: 'No subscriptions detected',
+                            message:
+                                'Sync your bank transactions to auto-detect recurring charges.',
+                            accent: AppColors.green,
+                          ),
+                        )
                       else
                         SliverList(
                           delegate: SliverChildBuilderDelegate(
@@ -136,7 +135,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '≈ ${(_monthlyTotal * 12).toStringAsFixed(0)} RON/year',
+            '≈ ${Money.ronCompact(_monthlyTotal * 12)}/year',
             style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 12),
@@ -188,7 +187,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     const SizedBox(width: 6),
                     if (sub.lastCharge.isNotEmpty)
                       Text('Last: ${sub.lastCharge}',
-                          style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 10)),
+                          style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 11)),
                   ],
                 ),
               ],
@@ -203,7 +202,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     color: _red, fontSize: 14, fontWeight: FontWeight.w700),
               ),
               Text('RON/mo',
-                  style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 10)),
+                  style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 11)),
             ],
           ),
         ],
@@ -218,27 +217,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       borderRadius: BorderRadius.circular(6),
     ),
     child: Text(text,
-        style: GoogleFonts.inter(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+        style: GoogleFonts.inter(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
   );
-
-  Widget _buildEmpty() {
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          const Icon(Icons.check_circle_outline, color: Color(0xFF3FB950), size: 56),
-          const SizedBox(height: 16),
-          Text('No Subscriptions Detected',
-              style: GoogleFonts.inter(
-                  color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Text('Sync your bank transactions to auto-detect recurring charges.',
-              style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13),
-              textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
 
   Widget _buildError() {
     return Center(
