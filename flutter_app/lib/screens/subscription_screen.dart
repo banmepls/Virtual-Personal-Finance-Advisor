@@ -37,6 +37,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     setState(() => _loading = true);
     try {
       final data = await apiService.getSubscriptions();
+      if (!mounted) return;
       setState(() {
         _subscriptions = data
             .map((s) => Subscription.fromJson(s as Map<String, dynamic>))
@@ -45,6 +46,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         _error = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -179,12 +181,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 3),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _chip(sub.category, _purple),
-                    const SizedBox(width: 6),
                     _chip(sub.frequency, const Color(0xFF8B949E)),
-                    const SizedBox(width: 6),
                     if (sub.lastCharge.isNotEmpty)
                       Text('Last: ${sub.lastCharge}',
                           style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 11)),

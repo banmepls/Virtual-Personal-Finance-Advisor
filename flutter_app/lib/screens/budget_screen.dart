@@ -43,12 +43,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
     setState(() => _loading = true);
     try {
       final data = await apiService.getBudgetStatus(monthYear: _selectedMonth);
+      if (!mounted) return;
       setState(() {
         _statusResponse = BudgetStatusResponse.fromJson(data);
         _loading = false;
         _error = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -300,7 +302,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
         );
       }
     }
-    await _load();
+    if (mounted) await _load();
   }
 
   Widget _buildBudgetCard(BudgetStatus b) {

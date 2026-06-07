@@ -59,6 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadHistory() async {
     try {
       final history = await apiService.fetchHistory(widget.userId);
+      if (!mounted) return;
       setState(() {
         for (var msg in history) {
           _messages.add({'role': msg['role'], 'content': msg['content']});
@@ -84,12 +85,14 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
     try {
       final response = await apiService.chatWithTori(widget.userId, text);
+      if (!mounted) return;
       setState(() {
         _messages.add({'role': 'assistant', 'content': response['response']});
         _loading = false;
       });
       _scrollToBottom();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _messages.add({
           'role': 'assistant', 

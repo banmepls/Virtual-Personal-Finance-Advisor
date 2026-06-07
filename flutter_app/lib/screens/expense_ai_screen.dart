@@ -55,6 +55,7 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
     setState(() => _loading = true);
     try {
       final data = await apiService.getExpenseCategories(monthYear: _selectedMonth);
+      if (!mounted) return;
       final cats = Map<String, double>.from(
         (data['categories'] as Map? ?? {}).map((k, v) => MapEntry(k, (v as num).toDouble())),
       );
@@ -68,6 +69,7 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
         _error = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -79,11 +81,13 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
     setState(() => _loadingInsight = true);
     try {
       final data = await apiService.getExpenseInsights(monthYear: _selectedMonth);
+      if (!mounted) return;
       setState(() {
         _aiSummary = data['ai_summary'] ?? '';
         _loadingInsight = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _aiSummary = '⚠️ Could not load AI insights: $e';
         _loadingInsight = false;

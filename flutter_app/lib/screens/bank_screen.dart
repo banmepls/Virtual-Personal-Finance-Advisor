@@ -46,6 +46,7 @@ class _BankScreenState extends State<BankScreen> {
     try {
       // Auto-connect (sandbox) + load accounts
       final connectRes = await apiService.connectBank();
+      if (!mounted) return;
       final newAuthUrl = connectRes['auth_url']?.toString() ?? '';
       setState(() {
         _authUrl = newAuthUrl.isNotEmpty ? newAuthUrl : null;
@@ -53,6 +54,7 @@ class _BankScreenState extends State<BankScreen> {
       });
 
       if (_authUrl != null) {
+        if (!mounted) return;
         setState(() {
           _loading = false;
           _account = null;
@@ -64,11 +66,17 @@ class _BankScreenState extends State<BankScreen> {
 
       final accounts = await apiService.getBankAccounts();
       if (accounts.isNotEmpty) {
-        _account = BankAccount.fromJson(accounts.first as Map<String, dynamic>);
-        final balanceData = await apiService.getBankBalances(_account!.resourceId);
-        _balance = BankBalance.fromJson(balanceData);
+        final firstAccount = BankAccount.fromJson(accounts.first as Map<String, dynamic>);
+        final balanceData = await apiService.getBankBalances(firstAccount.resourceId);
+        if (mounted) {
+          setState(() {
+            _account = firstAccount;
+            _balance = BankBalance.fromJson(balanceData);
+          });
+        }
       }
       final txData = await apiService.getBankTransactions(monthYear: _selectedMonth, limit: 100);
+      if (!mounted) return;
       setState(() {
         _transactions = txData
             .map((t) => BankTransaction.fromJson(t as Map<String, dynamic>))
@@ -77,6 +85,7 @@ class _BankScreenState extends State<BankScreen> {
         _error = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -102,19 +111,19 @@ class _BankScreenState extends State<BankScreen> {
     setState(() => _loading = true);
     try {
       await apiService.sandboxAutoConnect();
+      if (!mounted) return;
       setState(() => _authUrl = null);
       await _loadData();
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Auto-connect failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Auto-connect failed: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 
@@ -122,18 +131,18 @@ class _BankScreenState extends State<BankScreen> {
     setState(() => _loading = true);
     try {
       await apiService.sandboxAuthorize();
+      if (!mounted) return;
       setState(() => _authUrl = null);
       await _loadData();
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Authorization failed: $e'),
-            backgroundColor: _red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Authorization failed: $e'),
+          backgroundColor: _red,
+        ),
+      );
     }
   }
 
@@ -164,14 +173,14 @@ class _BankScreenState extends State<BankScreen> {
     setState(() => _loading = true);
     try {
       await apiService.disconnectBank();
+      if (!mounted) return;
       await _loadData();
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Disconnect failed: $e'), backgroundColor: _red),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Disconnect failed: $e'), backgroundColor: _red),
+      );
     }
   }
 
@@ -190,11 +199,12 @@ class _BankScreenState extends State<BankScreen> {
       await _loadData();
     } catch (e) {
       if (!mounted) return;
+      setState(() => _syncing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sync failed: $e'), backgroundColor: _red),
       );
     } finally {
-      setState(() => _syncing = false);
+      if (mounted) setState(() => _syncing = false);
     }
   }
 
@@ -269,9 +279,12 @@ class _BankScreenState extends State<BankScreen> {
             child: const Icon(Icons.account_balance, color: _primary, size: 18),
           ),
           const SizedBox(width: 10),
-          Text('Banca Transilvania',
-              style: GoogleFonts.inter(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
+          Expanded(
+            child: Text('Banca Transilvania',
+                style: GoogleFonts.inter(
+                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
+                overflow: TextOverflow.ellipsis),
+          ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -437,17 +450,23 @@ class _BankScreenState extends State<BankScreen> {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: _categoryColor(tx.category).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(tx.category,
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: _categoryColor(tx.category).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          tx.category,
                           style: GoogleFonts.inter(
                               color: _categoryColor(tx.category),
                               fontSize: 11,
-                              fontWeight: FontWeight.w600)),
+                              fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                     if (tx.isRecurring) ...[
                       const SizedBox(width: 6),

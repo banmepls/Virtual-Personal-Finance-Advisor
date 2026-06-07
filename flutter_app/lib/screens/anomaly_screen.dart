@@ -58,11 +58,13 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
           .toList();
 
       final data = await apiService.analyzePortfolio(positionsPayload);
+      if (!mounted) return;
       setState(() {
         _result = AnomalyResult.fromJson(data);
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -72,101 +74,103 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Anomaly Detection',
-              style: GoogleFonts.inter(
-                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(
-            'Ensemble of Isolation Forest + Autoencoder + One-Class SVM',
-            style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 12),
-          ),
-          const SizedBox(height: 16),
-          if (widget.positions.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF30363D)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Color(0xFF8B949E), size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Load your portfolio first — open Home to fetch positions, then come back to analyze.',
-                      style: GoogleFonts.inter(
-                          color: const Color(0xFF8B949E), fontSize: 13, height: 1.4),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Anomaly Detection',
+                style: GoogleFonts.inter(
+                    color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(
+              'Ensemble of Isolation Forest + Autoencoder + One-Class SVM',
+              style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+            if (widget.positions.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161B22),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF30363D)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Color(0xFF8B949E), size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Load your portfolio first — open Home to fetch positions, then come back to analyze.',
+                        style: GoogleFonts.inter(
+                            color: const Color(0xFF8B949E), fontSize: 13, height: 1.4),
+                      ),
                     ),
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _loading ? null : _analyze,
+                  icon: _loading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.radar),
+                  label: Text(_loading ? 'Analyzing...' : 'Re-analyze Portfolio'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1F6FEB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
-                ],
-              ),
-            )
-          else
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _loading ? null : _analyze,
-                icon: _loading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.radar),
-                label: Text(_loading ? 'Analyzing...' : 'Re-analyze Portfolio'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1F6FEB),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
-            ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF85149).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFF85149).withOpacity(0.4)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline, color: Color(0xFFF85149), size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(_error!,
-                        style: GoogleFonts.inter(
-                            color: const Color(0xFFF85149), fontSize: 13)),
-                  ),
-                  if (widget.positions.isNotEmpty)
-                    TextButton(
-                      onPressed: _loading ? null : _analyze,
-                      child: Text('Retry',
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF85149).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFF85149).withOpacity(0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Color(0xFFF85149), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(_error!,
                           style: GoogleFonts.inter(
-                              color: const Color(0xFF58A6FF),
-                              fontWeight: FontWeight.w600)),
+                              color: const Color(0xFFF85149), fontSize: 13)),
                     ),
-                ],
+                    if (widget.positions.isNotEmpty)
+                      TextButton(
+                        onPressed: _loading ? null : _analyze,
+                        child: Text('Retry',
+                            style: GoogleFonts.inter(
+                                color: const Color(0xFF58A6FF),
+                                fontWeight: FontWeight.w600)),
+                      ),
+                  ],
+                ),
               ),
-            ),
+            ],
+            if (_result != null) ...[
+              const SizedBox(height: 20),
+              _buildVerdictCard(_result!),
+              const SizedBox(height: 12),
+              _buildModelScores(_result!),
+            ],
           ],
-          if (_result != null) ...[
-            const SizedBox(height: 20),
-            _buildVerdictCard(_result!),
-            const SizedBox(height: 12),
-            _buildModelScores(_result!),
-          ],
-        ],
+        ),
       ),
     );
   }

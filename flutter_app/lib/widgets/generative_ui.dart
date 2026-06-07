@@ -213,42 +213,89 @@ class ReceiptWidget extends StatelessWidget {
   }
 }
 
-class ActionButtonWidget extends StatelessWidget {
+class ActionButtonWidget extends StatefulWidget {
   final Map<String, dynamic> data;
   const ActionButtonWidget({super.key, required this.data});
 
   @override
+  State<ActionButtonWidget> createState() => _ActionButtonWidgetState();
+}
+
+class _ActionButtonWidgetState extends State<ActionButtonWidget> {
+  bool _running = false;
+  bool _done = false;
+
+  Future<void> _run() async {
+    final action = widget.data['action'] ?? '';
+    setState(() {
+      _running = true;
+      _done = false;
+    });
+    String message;
+    Color color = const Color(0xFF238636);
+    try {
+      if (action == 'sync_bank') {
+        final result = await apiService.syncBank();
+        // Surface the real result so the user knows what happened.
+        final synced = result['synced'] ?? 0;
+        message = synced == 0
+            ? '✅ Already up to date — no new transactions.'
+            : '✅ Synced $synced new transaction(s).';
+      } else {
+        message = 'Action "$action" is not available.';
+        color = const Color(0xFFD29922);
+      }
+      if (mounted) setState(() => _done = true);
+    } catch (e) {
+      message = 'Could not complete the action. Please try again.';
+      color = const Color(0xFFF85149);
+    }
+    if (mounted) {
+      setState(() => _running = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: color),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final label = data['label'] ?? 'Action';
-    final action = data['action'] ?? '';
+    final label = widget.data['label'] ?? 'Action';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () async {
-          if (action == 'sync_bank') {
-            try {
-              await apiService.syncBank();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bank synced successfully!')));
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error syncing: $e')));
-              }
-            }
-          } else {
-             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Action $action not implemented yet.')));
-          }
-        },
+        onPressed: _running ? null : _run,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF21262D),
+          disabledBackgroundColor: const Color(0xFF21262D),
           padding: const EdgeInsets.symmetric(vertical: 12),
           side: const BorderSide(color: Color(0xFF30363D)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: Text(label, style: GoogleFonts.inter(color: const Color(0xFF58A6FF), fontSize: 15, fontWeight: FontWeight.bold)),
+        child: _running
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Color(0xFF58A6FF))),
+                  const SizedBox(width: 10),
+                  Text('Working…',
+                      style: GoogleFonts.inter(
+                          color: const Color(0xFF58A6FF),
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold)),
+                ],
+              )
+            : Text(_done ? '✓ $label' : label,
+                style: GoogleFonts.inter(
+                    color: const Color(0xFF58A6FF),
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold)),
       ),
     );
   }

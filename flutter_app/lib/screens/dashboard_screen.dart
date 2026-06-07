@@ -22,13 +22,18 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with TickerProviderStateMixin {
   Portfolio? _portfolio;
   double? _bankBalance;
   double? _monthSpend;
   bool _loading = true;
   String? _error;
   late int _selectedIndex;
+
+  // Controllers for the nested hub TabBars, so quick-access can target a sub-tab.
+  late final TabController _moneyTab = TabController(length: 3, vsync: this);
+  late final TabController _analyticsTab = TabController(length: 2, vsync: this);
 
   /// Honest data-source indicator: the mock portfolio reports username 'demo_user'.
   bool get _isLive =>
@@ -40,6 +45,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _selectedIndex = widget.initialIndex;
     _loadHome();
+  }
+
+  @override
+  void dispose() {
+    _moneyTab.dispose();
+    _analyticsTab.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHome() async {
@@ -83,7 +95,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _goToTab(int index) => setState(() => _selectedIndex = index);
+  void _goToTab(int index, [int? sub]) {
+    setState(() {
+      _selectedIndex = index;
+      if (index == 3 && sub != null) _moneyTab.index = sub;
+      if (index == 4 && sub != null) _analyticsTab.index = sub;
+    });
+  }
 
   Future<void> _confirmLogout() async {
     Navigator.pop(context); // close the profile sheet
@@ -229,68 +247,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Tab 2: Money hub — Budget / Subscriptions / Expenses ──────────────────
   Widget _buildMoneyHub() {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0D1117),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF161B22),
-          elevation: 0,
-          title: Text('Money',
-              style: GoogleFonts.inter(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
-          bottom: TabBar(
-            indicatorColor: const Color(0xFF58A6FF),
-            labelColor: const Color(0xFF58A6FF),
-            unselectedLabelColor: const Color(0xFF8B949E),
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
-            tabs: const [
-              Tab(text: 'Budget', icon: Icon(Icons.pie_chart, size: 18)),
-              Tab(text: 'Subscriptions', icon: Icon(Icons.repeat, size: 18)),
-              Tab(text: 'AI Analysis', icon: Icon(Icons.auto_awesome, size: 18)),
-            ],
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            BudgetScreen(),
-            SubscriptionScreen(),
-            ExpenseAIScreen(),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D1117),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF161B22),
+        elevation: 0,
+        title: Text('Money',
+            style: GoogleFonts.inter(
+                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+        bottom: TabBar(
+          controller: _moneyTab,
+          indicatorColor: const Color(0xFF58A6FF),
+          labelColor: const Color(0xFF58A6FF),
+          unselectedLabelColor: const Color(0xFF8B949E),
+          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+          tabs: const [
+            Tab(text: 'Budget', icon: Icon(Icons.pie_chart, size: 18)),
+            Tab(text: 'Subscriptions', icon: Icon(Icons.repeat, size: 18)),
+            Tab(text: 'AI Analysis', icon: Icon(Icons.auto_awesome, size: 18)),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _moneyTab,
+        children: const [
+          BudgetScreen(),
+          SubscriptionScreen(),
+          ExpenseAIScreen(),
+        ],
       ),
     );
   }
 
   // ── Tab 3: Analytics hub — Charts / Anomaly ───────────────────────────────
   Widget _buildAnalyticsHub() {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0D1117),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF161B22),
-          elevation: 0,
-          title: Text('Analytics',
-              style: GoogleFonts.inter(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
-          bottom: TabBar(
-            indicatorColor: const Color(0xFF58A6FF),
-            labelColor: const Color(0xFF58A6FF),
-            unselectedLabelColor: const Color(0xFF8B949E),
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
-            tabs: const [
-              Tab(text: 'Charts', icon: Icon(Icons.candlestick_chart, size: 18)),
-              Tab(text: 'Anomaly', icon: Icon(Icons.warning_amber, size: 18)),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            ChartScreen(positions: _portfolio?.positions ?? []),
-            AnomalyScreen(positions: _portfolio?.positions ?? []),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D1117),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF161B22),
+        elevation: 0,
+        title: Text('Analytics',
+            style: GoogleFonts.inter(
+                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+        bottom: TabBar(
+          controller: _analyticsTab,
+          indicatorColor: const Color(0xFF58A6FF),
+          labelColor: const Color(0xFF58A6FF),
+          unselectedLabelColor: const Color(0xFF8B949E),
+          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+          tabs: const [
+            Tab(text: 'Charts', icon: Icon(Icons.candlestick_chart, size: 18)),
+            Tab(text: 'Anomaly', icon: Icon(Icons.warning_amber, size: 18)),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _analyticsTab,
+        children: [
+          ChartScreen(positions: _portfolio?.positions ?? []),
+          AnomalyScreen(positions: _portfolio?.positions ?? []),
+        ],
       ),
     );
   }
@@ -349,33 +365,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Text('Your Money',
               style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13)),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
+          // ── Row 1: Investments ───────────────────────────────────────────
           Row(
             children: [
-              // Investments (USD)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.show_chart, color: Color(0xFF58A6FF), size: 15),
-                      const SizedBox(width: 5),
-                      Text('Investments',
-                          style: GoogleFonts.inter(
-                              color: const Color(0xFF8B949E), fontSize: 12)),
-                    ]),
-                    const SizedBox(height: 4),
-                    Text(
-                      hasInv ? '\$${invValue.toStringAsFixed(2)}' : '—',
-                      style: GoogleFonts.inter(
-                          color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
-                    ),
-                    if (hasInv)
-                      Row(children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF58A6FF).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.show_chart, color: Color(0xFF58A6FF), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text('Investments',
+                  style: GoogleFonts.inter(
+                      color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    hasInv ? '\$${invValue.toStringAsFixed(2)}' : '—',
+                    style: GoogleFonts.inter(
+                        color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                  if (hasInv)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Icon(isPos ? Icons.trending_up : Icons.trending_down,
                             color: isPos ? const Color(0xFF3FB950) : const Color(0xFFF85149),
                             size: 14),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 4),
                         Text(
                           '${isPos ? "+" : ""}${pnlPct.toStringAsFixed(2)}%',
                           style: GoogleFonts.inter(
@@ -383,36 +406,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               fontSize: 12,
                               fontWeight: FontWeight.w600),
                         ),
-                      ]),
-                  ],
-                ),
-              ),
-              Container(width: 1, height: 46, color: const Color(0xFF30363D)),
-              const SizedBox(width: 14),
-              // Bank (RON)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.account_balance, color: Color(0xFF3FB950), size: 15),
-                      const SizedBox(width: 5),
-                      Text('Bank',
-                          style: GoogleFonts.inter(
-                              color: const Color(0xFF8B949E), fontSize: 12)),
-                    ]),
-                    const SizedBox(height: 4),
-                    Text(
-                      _bankBalance != null ? ron.format(_bankBalance) : '—',
-                      style: GoogleFonts.inter(
-                          color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                      ],
                     ),
-                    if (_monthSpend != null)
-                      Text('${_monthSpend!.toStringAsFixed(0)} RON spent this month',
-                          style: GoogleFonts.inter(
-                              color: const Color(0xFF8B949E), fontSize: 11)),
-                  ],
+                ],
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: Color(0xFF30363D), height: 1),
+          ),
+          // ── Row 2: Bank ──────────────────────────────────────────────────
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3FB950).withOpacity(0.15),
+                  shape: BoxShape.circle,
                 ),
+                child: const Icon(Icons.account_balance, color: Color(0xFF3FB950), size: 19),
+              ),
+              const SizedBox(width: 12),
+              Text('Bank',
+                  style: GoogleFonts.inter(
+                      color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _bankBalance != null ? ron.format(_bankBalance) : '—',
+                    style: GoogleFonts.inter(
+                        color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                  if (_monthSpend != null)
+                    Text('${_monthSpend!.toStringAsFixed(0)} RON spent this month',
+                        style: GoogleFonts.inter(
+                            color: const Color(0xFF8B949E), fontSize: 11)),
+                ],
               ),
             ],
           ),
@@ -422,12 +455,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildQuickAccess() {
+    // (icon, label, color, tab, subTab)
     final items = [
-      (Icons.account_balance, 'Bank', const Color(0xFF3FB950), 1),
-      (Icons.savings, 'Budget', const Color(0xFFD29922), 3),
-      (Icons.repeat, 'Subs', const Color(0xFFBC8CFF), 3),
-      (Icons.analytics, 'Analytics', const Color(0xFF58A6FF), 4),
-      (Icons.smart_toy, 'Tori', const Color(0xFF1F6FEB), 2),
+      (Icons.account_balance, 'Bank', const Color(0xFF3FB950), 1, 0),
+      (Icons.savings, 'Budget', const Color(0xFFD29922), 3, 0),
+      (Icons.repeat, 'Subs', const Color(0xFFBC8CFF), 3, 1),
+      (Icons.auto_awesome, 'Expenses', const Color(0xFFF0883E), 3, 2),
+      (Icons.analytics, 'Analytics', const Color(0xFF58A6FF), 4, 0),
+      (Icons.smart_toy, 'Tori', const Color(0xFF1F6FEB), 2, 0),
     ];
     return SizedBox(
       height: 78,
@@ -436,9 +471,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (ctx, i) {
-          final (icon, label, color, tab) = items[i];
+          final (icon, label, color, tab, sub) = items[i];
           return GestureDetector(
-            onTap: () => _goToTab(tab),
+            onTap: () => _goToTab(tab, sub),
             child: Container(
               width: 78,
               decoration: BoxDecoration(
