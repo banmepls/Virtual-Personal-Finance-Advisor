@@ -26,6 +26,7 @@ class Budget {
 }
 
 class BudgetStatus {
+  final int budgetId;
   final String category;
   final double limitAmount;
   final double spentAmount;
@@ -35,6 +36,7 @@ class BudgetStatus {
   final String status; // "ok", "warning", "exceeded"
 
   BudgetStatus({
+    required this.budgetId,
     required this.category,
     required this.limitAmount,
     required this.spentAmount,
@@ -45,6 +47,7 @@ class BudgetStatus {
   });
 
   factory BudgetStatus.fromJson(Map<String, dynamic> json) => BudgetStatus(
+        budgetId: json['budget_id'] ?? 0,
         category: json['category'] ?? '',
         limitAmount: (json['limit_amount'] as num?)?.toDouble() ?? 0,
         spentAmount: (json['spent_amount'] as num?)?.toDouble() ?? 0,

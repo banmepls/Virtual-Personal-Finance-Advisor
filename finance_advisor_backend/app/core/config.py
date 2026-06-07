@@ -2,8 +2,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    app_name: str = "Virtual Finance Advisor"
-
     # API Keys
     etoro_api_key: str = ""
     etoro_user_key: str = ""
@@ -29,7 +27,7 @@ class Settings(BaseSettings):
     bt_client_secret: str = "sandbox_client_secret"
     bt_base_url: str = "https://api.apistorebt.ro/bt/sb"
     bt_redirect_uri: str = "http://localhost:8001/api/v1/bank/oauth2/callback"
-    bt_frontend_redirect_uri: str = "http://localhost:3000/dashboard"
+    bt_frontend_redirect_uri: str = "http://localhost"  # Docker frontend (port 80)
     
     # Load from .env
     model_config = SettingsConfigDict(

@@ -261,6 +261,48 @@ class _BudgetScreenState extends State<BudgetScreen> {
     ],
   );
 
+  Future<bool> _confirmDeleteBudget(BudgetStatus b) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _surface,
+        title: Text('Delete budget?',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+        content: Text('Remove the ${b.category} budget for this month?',
+            style: GoogleFonts.inter(color: _muted)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.inter(color: _muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Delete', style: GoogleFonts.inter(color: _red)),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
+  Future<void> _deleteBudget(BudgetStatus b) async {
+    try {
+      await apiService.deleteBudget(b.budgetId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Deleted ${b.category} budget'), backgroundColor: _surface),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e'), backgroundColor: _red),
+        );
+      }
+    }
+    await _load();
+  }
+
   Widget _buildBudgetCard(BudgetStatus b) {
     final pct = (b.percentageUsed / 100).clamp(0.0, 1.0);
     Color barColor;
@@ -272,7 +314,23 @@ class _BudgetScreenState extends State<BudgetScreen> {
       barColor = _green;
     }
 
-    return Container(
+    return Dismissible(
+      key: ValueKey('budget-${b.budgetId}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmDeleteBudget(b),
+      onDismissed: (_) => _deleteBudget(b),
+      background: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        padding: const EdgeInsets.only(right: 22),
+        alignment: Alignment.centerRight,
+        decoration: BoxDecoration(
+          color: _red.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _red.withOpacity(0.5)),
+        ),
+        child: const Icon(Icons.delete_outline, color: _red),
+      ),
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -326,6 +384,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
             ],
           ),
         ],
+      ),
       ),
     );
   }

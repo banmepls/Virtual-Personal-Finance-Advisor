@@ -138,6 +138,7 @@ async def budget_status(
         else:
             status = "ok"
         items.append(BudgetStatusItem(
+            budget_id=b.id,
             category=b.category,
             limit_amount=b.limit_amount,
             spent_amount=round(spent, 2),

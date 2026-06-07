@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, String
 
@@ -18,6 +18,7 @@ from app.core.database import get_db
 from app.models.bank_connection import BTConnection
 from app.models.bank_transaction import BankTransaction
 from app.services.bt_service import bt_service
+from app.core.config import get_settings
 from app.services.expense_categorizer import (
     categorize_transaction, detect_recurring,
     get_spending_by_category, extract_subscriptions,
@@ -294,24 +295,29 @@ async def oauth2_callback(code: str, state: Optional[str] = None, db: AsyncSessi
             conn.selected_accounts = None  # clear the temporary PKCE verifier
             await db.commit()
             
-        # Display a success page telling the user to return to the app
-        html = """
+        # Success page — auto-redirect the user back to the app frontend.
+        frontend_url = get_settings().bt_frontend_redirect_uri
+        html = f"""
         <html>
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta http-equiv="refresh" content="3;url={frontend_url}">
             <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; border-top: 5px solid #238636; }
-                h2 { color: #238636; margin-top: 0; }
-                p { color: #555; line-height: 1.5; }
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+                .card {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; border-top: 5px solid #238636; }}
+                h2 {{ color: #238636; margin-top: 0; }}
+                p {{ color: #555; line-height: 1.5; }}
+                .btn {{ display: inline-block; margin-top: 16px; background: #238636; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; }}
             </style>
         </head>
         <body>
             <div class="card">
                 <h2>Autorizare cu Succes</h2>
                 <p>Conturile tale Banca Transilvania au fost conectate cu succes!</p>
-                <p style="font-weight: bold; color: #333;">Poti inchide aceasta pagina si sa te intorci in aplicatia Virtual Advisor.</p>
+                <p style="font-weight: bold; color: #333;">Te redirectionam inapoi in aplicatie...</p>
+                <a class="btn" href="{frontend_url}">Inapoi la aplicatie</a>
             </div>
+            <script>setTimeout(function() {{ window.location.href = "{frontend_url}"; }}, 3000);</script>
         </body>
         </html>
         """

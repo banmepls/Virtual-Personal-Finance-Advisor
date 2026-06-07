@@ -191,6 +191,7 @@ class BudgetResponse(BaseModel):
 
 
 class BudgetStatusItem(BaseModel):
+    budget_id: int
     category: str
     limit_amount: float
     spent_amount: float
