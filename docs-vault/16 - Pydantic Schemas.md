@@ -221,6 +221,7 @@ class BudgetCreateRequest(BaseModel):
 ### `BudgetStatusItem`
 ```python
 class BudgetStatusItem(BaseModel):
+    budget_id: int             # used by the UI to delete a budget by id
     category: str
     limit_amount: float
     spent_amount: float

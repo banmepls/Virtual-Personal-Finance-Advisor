@@ -194,6 +194,22 @@ async def get_transactions(...):
 
 ---
 
+## OAuth2 Callback → Frontend Redirect
+
+After `GET /api/v1/bank/oauth2/callback` exchanges the code and stores the token, the success
+page **auto-redirects the browser back to the app** using `settings.bt_frontend_redirect_uri`
+(default `http://localhost`, the Docker frontend). It uses three mechanisms for robustness:
+
+```html
+<meta http-equiv="refresh" content="3;url={frontend_url}">      <!-- meta refresh -->
+<a class="btn" href="{frontend_url}">Inapoi la aplicatie</a>      <!-- manual fallback -->
+<script>setTimeout(() => location.href = "{frontend_url}", 3000)</script>  <!-- JS -->
+```
+
+Set `BT_FRONTEND_REDIRECT_URI` in `.env` to match where the app is served.
+
+---
+
 ## Key Tables
 
 | Table | Purpose |

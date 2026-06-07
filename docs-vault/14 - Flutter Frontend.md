@@ -21,6 +21,10 @@ flutter_app/lib/
 │   └── subscription_screen.dart  # Subscription tracker
 ├── services/
 │   └── api_service.dart          # HTTP client + JWT session management
+├── theme/
+│   └── app_colors.dart           # Single source of truth for the palette
+├── utils/
+│   └── money.dart                # Shared RON/USD formatters
 ├── models/
 │   ├── anomaly_model.dart
 │   ├── bank_model.dart
@@ -31,6 +35,20 @@ flutter_app/lib/
     ├── treemap_chart.dart         # Squarified treemap (allocation + spending)
     └── empty_state.dart           # Reusable empty-list placeholder
 ```
+
+---
+
+## Shared Foundations (consistency)
+
+| File | Purpose |
+|---|---|
+| `theme/app_colors.dart` | `AppColors.*` — the GitHub-dark palette + categorical chart colours. Screens reference these instead of redeclaring hex literals. |
+| `utils/money.dart` | `Money.ron()`, `Money.ronCompact()`, `Money.usd()` — consistent currency formatting (thousands separators) across Bank, Expense, Subscriptions. |
+| `widgets/empty_state.dart` | One `EmptyState` widget used by all list screens (Bank, Budget, Subscriptions, Expense) for "no data" placeholders. |
+
+**Conventions:**
+- Both hubs' sub-screens render **without their own app bar** (the hub provides the header + TabBar) — no duplicate title bars.
+- Every data screen has consistent **loading → error (with Retry) → empty → content** states.
 
 ---
 
@@ -145,6 +163,7 @@ bool get _isLive =>
 ### `BudgetScreen`
 - Create budget via bottom-sheet dialog (category + limit).
 - Status bars colored ok / warning / exceeded by % used; month selector; empty + error states.
+- **Swipe-to-delete** — each budget card is a `Dismissible` (swipe → confirm dialog → `DELETE /budget/{budget_id}` → reload). Relies on `budget_id` now included in the status response.
 
 ### `AnomalyScreen`
 - **Auto-runs** the ML ensemble when portfolio positions are available (on load, and when positions arrive via `didUpdateWidget`).

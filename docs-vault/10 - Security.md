@@ -52,14 +52,14 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=1440))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
-
-def verify_token(token: str) -> dict | None:
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        return None
 ```
+
+> ⚠️ **Auth is not yet enforced on protected routes.** Tokens are issued at login and the
+> Flutter client sends them as `Authorization: Bearer`, but the backend endpoints currently
+> resolve the user via a hardcoded `DEFAULT_USER_ID = 1` rather than validating the token.
+> A server-side `verify_token()` helper previously existed but was unused and has been removed.
+> To add real per-user isolation, reintroduce it as a FastAPI dependency (`Depends`) on the
+> routers and replace `DEFAULT_USER_ID` with the decoded `sub` claim.
 
 ### JWT Payload
 ```json

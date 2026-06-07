@@ -6,6 +6,26 @@ Notable changes and fixes. Newest first.
 
 ---
 
+## 2026-06-07 — Consistency refactor, dead-code cleanup & wiring
+
+### Frontend consistency
+- **Shared palette** — new `theme/app_colors.dart` (`AppColors`); the six token-block screens now reference it instead of redeclaring hex values.
+- **Shared currency formatting** — new `utils/money.dart` (`Money.ron/ronCompact/usd`) used across Bank, Expense, Subscriptions.
+- **Unified empty states** — all list screens use the single `EmptyState` widget.
+- **No duplicate headers** — removed the redundant `SliverAppBar`s from the Money hub sub-screens (Budget/Subscriptions/Expense); the hub provides the header.
+- **Error+Retry everywhere** — added proper error/retry to Chart (was silent) and a Retry to the Anomaly inline error.
+
+### Dead-code cleanup
+- Removed ~24 unused imports + unused symbols (`verify_token`, `retrain`, `app_name`, Dart `setToken`, an unused `settings` local) and 3 scratch test scripts.
+- Verified: pyflakes 0 unused, `flutter analyze` 0 errors / 0 unused.
+- See [[10 - Security]] — `verify_token` removal note (auth is not yet enforced; routes use `DEFAULT_USER_ID`).
+
+### Newly wired features
+- **Delete budget** — `BudgetStatusItem` now carries `budget_id`; budget cards are **swipe-to-delete** → `DELETE /budget/{id}`. See [[16 - Pydantic Schemas]], [[14 - Flutter Frontend]].
+- **Frontend redirect after bank auth** — `GET /bank/oauth2/callback` now auto-redirects to `bt_frontend_redirect_uri` (default `http://localhost`). See [[09 - BT PSD2 Bank Integration]].
+
+---
+
 ## 2026-06-07 — eToro live data + Frontend UX overhaul
 
 ### eToro integration fixed (now serves real data)

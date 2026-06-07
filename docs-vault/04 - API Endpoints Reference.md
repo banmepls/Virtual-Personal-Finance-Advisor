@@ -88,6 +88,7 @@ Tags: #api #endpoints #rest
 ### `GET /budget/status` Response Item
 ```json
 {
+  "budget_id": 7,        // used by the app for swipe-to-delete
   "category": "Food & Groceries",
   "limit_amount": 800.0,
   "spent_amount": 650.0,
@@ -97,6 +98,9 @@ Tags: #api #endpoints #rest
   "status": "warning"    // "ok" | "warning" | "exceeded"
 }
 ```
+
+> `DELETE /budget/{id}` is wired into the UI: each budget card is swipe-to-delete (uses `budget_id`).
+> `GET /bank/oauth2/callback` auto-redirects the browser back to `bt_frontend_redirect_uri` on success.
 
 ---
 
