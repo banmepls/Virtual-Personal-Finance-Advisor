@@ -173,6 +173,15 @@ async def save_message(db, user_id: int, role: str, content: str):
 | `get_all_instruments()` | Returns all eToro instruments |
 | `get_stock_price(symbol)` | Fetches real-time Alpha Vantage quote |
 | `get_market_sentiment()` | Returns current market sentiment summary |
+| `get_spending_summary(month_year="")` | Spending by category for a month |
+| `get_budget_status(month_year="")` | Spending vs. budgets — answers "did I overspend?" |
+| `get_subscriptions()` | Detected recurring subscription charges |
+| `get_recent_transactions(limit=10)` | Most recent bank transactions |
+
+> The bank/spending tools make the system prompt's "bank-aware" capabilities **real**. Before
+> they existed Tori had only portfolio/market tools, so spending questions failed and it would
+> wrongly claim the bank wasn't synced. All tools are exception-safe (return `{"error": ...}`
+> rather than raising) so one failing tool can't take down the whole reply.
 
 See [[07 - MCP Server]] for details.
 

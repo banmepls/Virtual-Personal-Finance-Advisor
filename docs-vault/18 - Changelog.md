@@ -6,6 +6,20 @@ Notable changes and fixes. Newest first.
 
 ---
 
+## 2026-06-08 — Tori bank-awareness, MCP resilience & UI fixes
+
+### Tori can finally read bank data
+- Added four DB-backed MCP tools — `get_spending_summary`, `get_budget_status`, `get_subscriptions`, `get_recent_transactions` — so the agent's "bank-aware" prompt claims are actually backed by data. Previously Tori had only portfolio/market tools and would wrongly answer "the bank isn't synced" to spending/overspend questions. See [[07 - MCP Server]], [[06 - Tori Agent]].
+
+### MCP resilience (fixes "Tori temporarily unavailable")
+- All MCP tools now catch their own errors and return `{"error": ...}` instead of raising. A raised tool exception previously aborted the whole LangGraph turn → the user saw the offline fallback. Triggered most often by `get_stock_price` (invalid symbol / Alpha Vantage quota).
+
+### Frontend
+- **Generative `action_button` is now stateful** — shows a "Working…" spinner + disables while running, then reports the real result. The "Sync Bank" button previously looked dead during the multi-second sync. See [[14 - Flutter Frontend]].
+- **Quick-access deep-links to sub-tabs** — Home chips now drive State-owned `TabController`s, so "Budget"/"Subs"/"Expenses" open the correct Money-hub sub-tab instead of always landing on the first one.
+
+---
+
 ## 2026-06-07 — Consistency refactor, dead-code cleanup & wiring
 
 ### Frontend consistency

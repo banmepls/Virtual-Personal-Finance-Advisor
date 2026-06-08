@@ -125,7 +125,7 @@ body: IndexedStack(index: _selectedIndex, children: screens),
 
 ### Home / Overview (Tab 0)
 - **"Your Money" card** — Investments (USD) and Bank (RON) shown **side-by-side in their own currencies** (not summed, to avoid a misleading cross-currency total), plus this-month spend and portfolio P&L %.
-- **Quick-access row** — one-tap chips to Bank, Budget, Subscriptions, Analytics, Tori (surfaces features otherwise buried two levels deep).
+- **Quick-access row** — one-tap chips to Bank, Budget, Subs, Expenses, Analytics, Tori. These **deep-link to the exact sub-tab** inside a hub (e.g. Subs → Money hub, tab 1) via State-owned `TabController`s, so "Subs" opens Subscriptions rather than the hub's default first tab.
 - **Investments** — allocation treemap + position cards (resilient: shows an "unavailable" card if the portfolio call fails).
 - **Data-source badge** — `LIVE` vs `DEMO`, derived honestly from the data (the mock portfolio reports `username == 'demo_user'`).
 - **Profile sheet** — username + **Log out** (clears JWT, returns to `AuthScreen`).
@@ -238,6 +238,10 @@ Tori's responses may contain `widget` fenced code blocks, parsed and rendered as
 { "type": "receipt", "merchant": "eMAG", "amount": 150.5, "date": "2026-06-05", "category": "Shopping" }
 { "type": "action_button", "label": "Sync Bank", "action": "sync_bank" }
 ```
+
+- **`action_button`** is stateful: it shows a "Working…" spinner and disables while the action
+  runs (e.g. a multi-second `/bank/sync`), then surfaces the real result ("Synced N new
+  transaction(s)" / "Already up to date") — so it never looks inert/dead on a slow connection.
 
 ---
 
