@@ -6,7 +6,7 @@ Tags: #architecture #overview
 
 Virtual Personal Finance Advisor is a full-stack platform that helps users:
 1. **Track** real bank transactions via Banca Transilvania PSD2 AISP API
-2. **Monitor** investment portfolio via eToro API + Alpha Vantage market data
+2. **Monitor** investment portfolio via eToro API + Yahoo Finance market data
 3. **Detect** unusual portfolio behaviour via ML anomaly ensemble
 4. **Advise** through Tori, an LLM-powered conversational financial agent
 
@@ -27,7 +27,7 @@ graph TD
         Bank[bank router\nBT PSD2 proxy]
         Agent[agent router\nTori LLM]
         Anomaly[anomaly router\nML ensemble]
-        Market[market router\nAlpha Vantage]
+        Market[market router\nYahoo Finance]
         eToro[etoro router\nPortfolio]
         Budget[budget router]
         Expenses[expenses router]
@@ -37,14 +37,14 @@ graph TD
     subgraph "Core Infrastructure"
         DB[(PostgreSQL 16\nasyncpg)]
         Cache[LRU Cache\n256 entries + TTL]
-        CB[Circuit Breakers\neToro + AlphaVantage]
+        CB[Circuit Breakers\neToro + Yahoo Finance]
         Vault[HashiCorp Vault\nAES-256 master key]
     end
 
     subgraph "External APIs"
         BTApi[Banca Transilvania\nPSD2 AISP API v2]
         EtoroApi[eToro Public API]
-        AVApi[Alpha Vantage\n25 req/day free]
+        AVApi[Yahoo Finance\nyfinance — no key]
         GeminiApi[Google Gemini\ngemini-3.1-flash-lite]
     end
 

@@ -68,7 +68,6 @@ All configuration lives in `finance_advisor_backend/.env` (loaded by Docker Comp
 | `ETORO_BASE_URL` | eToro API base | `https://public-api.etoro.com` |
 | `ETORO_ENV` | `demo` or `live` | `demo` |
 | `ETORO_USERNAME` | eToro username | — |
-| `ALPHA_VANTAGE_API_KEY` | Alpha Vantage key | — |
 | `USE_MOCK_DATA` | Use local mock data | `true` |
 | `API_BASE_URL` | Flutter build arg | `http://localhost:8001/api/v1` |
 | `BT_CLIENT_ID` | BT OAuth2 client ID | `sandbox_client_id` |

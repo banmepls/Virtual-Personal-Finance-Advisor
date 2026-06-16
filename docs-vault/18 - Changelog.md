@@ -6,13 +6,22 @@ Notable changes and fixes. Newest first.
 
 ---
 
+## 2026-06-08 — Market data: Alpha Vantage → Yahoo Finance
+
+- **Replaced Alpha Vantage with Yahoo Finance** (`yfinance` library) as the market-quote/history source. No API key and **no fixed daily quota** — the old 25 req/day limit is gone. `yfinance` is synchronous, so calls run in a worker thread (`asyncio.to_thread`) behind the renamed `yahoo_finance` circuit breaker. See [[17 - eToro & Market Data]].
+- **Removed the Alpha Vantage quota guard** from the cache service (`ALPHA_VANTAGE_DAILY_LIMIT`, `_av_daily_counter`, `av_quota_*`, `av_increment_counter`) and the `alpha_vantage_quota` block from `/health` + `HealthResponse`. See [[12 - Cache Service]], [[11 - Fault Tolerance]], [[16 - Pydantic Schemas]].
+- Dropped `alpha_vantage_api_key` from settings; crypto symbols auto-map to Yahoo's `-USD` convention.
+- **Caveat:** `yfinance` uses Yahoo's unofficial endpoints, so it can throttle (HTTP 429) or break on Yahoo-side changes — covered by circuit breaker + cache + mock fallback.
+
+---
+
 ## 2026-06-08 — Tori bank-awareness, MCP resilience & UI fixes
 
 ### Tori can finally read bank data
 - Added four DB-backed MCP tools — `get_spending_summary`, `get_budget_status`, `get_subscriptions`, `get_recent_transactions` — so the agent's "bank-aware" prompt claims are actually backed by data. Previously Tori had only portfolio/market tools and would wrongly answer "the bank isn't synced" to spending/overspend questions. See [[07 - MCP Server]], [[06 - Tori Agent]].
 
 ### MCP resilience (fixes "Tori temporarily unavailable")
-- All MCP tools now catch their own errors and return `{"error": ...}` instead of raising. A raised tool exception previously aborted the whole LangGraph turn → the user saw the offline fallback. Triggered most often by `get_stock_price` (invalid symbol / Alpha Vantage quota).
+- All MCP tools now catch their own errors and return `{"error": ...}` instead of raising. A raised tool exception previously aborted the whole LangGraph turn → the user saw the offline fallback. Triggered most often by `get_stock_price` (invalid symbol / market data unavailable).
 
 ### Frontend
 - **Generative `action_button` is now stateful** — shows a "Working…" spinner + disables while running, then reports the real result. The "Sync Bank" button previously looked dead during the multi-second sync. See [[14 - Flutter Frontend]].

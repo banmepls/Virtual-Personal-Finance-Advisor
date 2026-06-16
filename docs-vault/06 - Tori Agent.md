@@ -56,7 +56,7 @@ def create_tori_agent(user_id: int):
 Tori's system prompt defines:
 
 ### Capabilities
-1. **Investment Portfolio** — eToro data, rebalancing suggestions, Alpha Vantage quotes
+1. **Investment Portfolio** — eToro data, rebalancing suggestions, Yahoo Finance quotes
 2. **Bank Account (BT)** — Transaction analysis, category spending, budgets, subscriptions
 3. **Expense Analysis** — Trend identification, budget overrun flagging (🔴🟡🟢)
 4. **Anomaly Detection** — Refers users to the Anomaly Detection dashboard
@@ -171,7 +171,7 @@ async def save_message(db, user_id: int, role: str, content: str):
 |---|---|
 | `get_my_portfolio()` | Fetches live eToro portfolio |
 | `get_all_instruments()` | Returns all eToro instruments |
-| `get_stock_price(symbol)` | Fetches real-time Alpha Vantage quote |
+| `get_stock_price(symbol)` | Fetches real-time Yahoo Finance quote |
 | `get_market_sentiment()` | Returns current market sentiment summary |
 | `get_spending_summary(month_year="")` | Spending by category for a month |
 | `get_budget_status(month_year="")` | Spending vs. budgets — answers "did I overspend?" |

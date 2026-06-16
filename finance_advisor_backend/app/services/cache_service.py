@@ -4,25 +4,16 @@ app/services/cache_service.py
 Two-tier caching layer:
   1. In-memory LRU dict with TTL (fast, per-process)
   2. DB-backed CacheEntry (survives restarts, shared across processes)
-
-Also enforces the Alpha Vantage 25 req/day quota policy.
 """
 import time
 import logging
 from collections import OrderedDict
-from datetime import datetime, timezone
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Max entries in the in-memory LRU cache
 LRU_CAPACITY = 256
-
-# Alpha Vantage daily request limit
-ALPHA_VANTAGE_DAILY_LIMIT = 25
-
-# In-memory counter (resets when process restarts — DB is source of truth)
-_av_daily_counter: dict[str, int] = {}   # key: "YYYY-MM-DD"
 
 
 class _InMemoryLRU:
@@ -82,25 +73,3 @@ def cache_clear():
 
 def cache_stats() -> dict:
     return _lru.stats()
-
-
-# ── Alpha Vantage quota guard ─────────────────────────────────────────────────
-
-def get_av_daily_key() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-
-def av_quota_remaining() -> int:
-    today = get_av_daily_key()
-    used = _av_daily_counter.get(today, 0)
-    return max(0, ALPHA_VANTAGE_DAILY_LIMIT - used)
-
-
-def av_quota_exceeded() -> bool:
-    return av_quota_remaining() == 0
-
-
-def av_increment_counter():
-    today = get_av_daily_key()
-    _av_daily_counter[today] = _av_daily_counter.get(today, 0) + 1
-    logger.info(f"[Cache] Alpha Vantage daily usage: {_av_daily_counter[today]}/{ALPHA_VANTAGE_DAILY_LIMIT}")

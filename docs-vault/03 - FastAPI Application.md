@@ -24,7 +24,7 @@ app = FastAPI(
 async def lifespan(app: FastAPI):
     # 1. Pre-register circuit breakers (appear in /health from first request)
     get_circuit_breaker("etoro")
-    get_circuit_breaker("alpha_vantage")
+    get_circuit_breaker("yahoo_finance")
 
     # 2. ML models are lazy-initialized (auto-train on first /anomaly/analyze call)
     yield
@@ -112,9 +112,7 @@ Uses **pydantic-settings** `BaseSettings` with `lru_cache` singleton:
 
 ```python
 class Settings(BaseSettings):
-    app_name: str = "Virtual Finance Advisor"
     etoro_api_key: str = ""
-    alpha_vantage_api_key: str = ""
     secret_key: str = "default_secret_key_for_dev_only"
     google_api_key: str = ""
     use_mock_data: bool = True

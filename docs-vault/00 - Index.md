@@ -2,7 +2,7 @@
 
 Tags: #index #moc #home
 
-Technical documentation vault for the **Virtual Personal Finance Advisor** — a full-stack (FastAPI + Flutter) platform combining real bank data (Banca Transilvania PSD2), investment portfolio tracking (eToro + Alpha Vantage), ML anomaly detection, and an LLM agent (Tori).
+Technical documentation vault for the **Virtual Personal Finance Advisor** — a full-stack (FastAPI + Flutter) platform combining real bank data (Banca Transilvania PSD2), investment portfolio tracking (eToro + Yahoo Finance), ML anomaly detection, and an LLM agent (Tori).
 
 > Start at [[01 - System Overview]] for the architecture, or jump to a subsystem below.
 
@@ -29,7 +29,7 @@ Technical documentation vault for the **Virtual Personal Finance Advisor** — a
 | Note | Topic |
 |---|---|
 | [[09 - BT PSD2 Bank Integration]] | OAuth2 PKCE, consent, sync, sandbox fallback |
-| [[17 - eToro & Market Data]] | Public portfolio, $10k allocation model, instrument resolver, Alpha Vantage |
+| [[17 - eToro & Market Data]] | Public portfolio, $10k allocation model, instrument resolver, Yahoo Finance |
 | [[13 - Expense Categorizer]] | Transaction categorization & subscription detection |
 | [[08 - ML Anomaly Detection]] | Isolation Forest + Autoencoder + One-Class SVM ensemble |
 | [[06 - Tori Agent]] | LangGraph ReAct agent over Gemini |
@@ -40,7 +40,7 @@ Technical documentation vault for the **Virtual Personal Finance Advisor** — a
 |---|---|
 | [[10 - Security]] | JWT, bcrypt, AES-256 field encryption, Vault |
 | [[11 - Fault Tolerance]] | Circuit breakers, retries, mock fallback |
-| [[12 - Cache Service]] | LRU + TTL cache, Alpha Vantage quota |
+| [[12 - Cache Service]] | LRU + TTL cache |
 
 ### Frontend
 | Note | Topic |

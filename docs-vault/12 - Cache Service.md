@@ -1,6 +1,6 @@
 # 💾 Cache Service
 
-Tags: #cache #lru #performance #alpha-vantage
+Tags: #cache #lru #performance #market-data
 
 ## Architecture
 
@@ -76,32 +76,7 @@ cache_clear()
 cache_stats() -> dict
 ```
 
----
-
-## Alpha Vantage Quota Guard
-
-Alpha Vantage's free tier allows **25 requests/day**. The cache service enforces this:
-
-```python
-ALPHA_VANTAGE_DAILY_LIMIT = 25
-
-# In-memory counter per calendar day (UTC)
-_av_daily_counter: dict[str, int] = {}   # {"2026-06-07": 12, ...}
-
-def av_quota_remaining() -> int:
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    used = _av_daily_counter.get(today, 0)
-    return max(0, 25 - used)
-
-def av_quota_exceeded() -> bool:
-    return av_quota_remaining() == 0
-
-def av_increment_counter():
-    today = get_av_daily_key()
-    _av_daily_counter[today] = _av_daily_counter.get(today, 0) + 1
-```
-
-> **Note:** The in-memory counter resets when the process restarts. The DB is the source of truth for persistent quota tracking. Old day entries accumulate harmlessly (only today's entry is checked).
+> **Note:** The market-data source is now **Yahoo Finance** (`yfinance`), which has no fixed daily request quota — so the previous Alpha Vantage quota guard (`ALPHA_VANTAGE_DAILY_LIMIT`, `av_quota_*`, daily counter) has been **removed**. Market resilience now relies solely on the cache + circuit breaker.
 
 ---
 
@@ -109,7 +84,7 @@ def av_increment_counter():
 
 | Key Pattern | Data | TTL |
 |---|---|---|
-| `quote:{symbol}` | Alpha Vantage stock quote | 300s |
+| `quote:{symbol}` | Yahoo Finance stock quote | 3600s |
 | `portfolio:{user_id}` | eToro portfolio | 300s |
 | `instruments` | eToro instrument list | 3600s |
 
@@ -125,11 +100,6 @@ Cache stats are included in the `/health` response:
     "size": 12,
     "capacity": 256,
     "db_connected": true
-  },
-  "alpha_vantage_quota": {
-    "daily_limit": 25,
-    "remaining": 13,
-    "exceeded": false
   }
 }
 ```

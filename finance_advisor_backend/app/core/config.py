@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     etoro_env: str = "demo"
     etoro_username: str = "demo_user"
 
-    alpha_vantage_api_key: str = ""
     secret_key: str = "default_secret_key_for_dev_only"
     google_api_key: str = ""
 

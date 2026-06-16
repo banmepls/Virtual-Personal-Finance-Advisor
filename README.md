@@ -50,7 +50,7 @@ ETORO_USER_KEY=your_etoro_user_key
 ETORO_BASE_URL=https://api.etoro.com
 ETORO_ENV=demo
 ETORO_USERNAME=your_username
-ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
+# Market quotes use Yahoo Finance (yfinance) — no API key required
 SECRET_KEY=your_generated_secret_key   # python -c "import secrets; print(secrets.token_hex(32))"
 GOOGLE_API_KEY=your_gemini_api_key
 

@@ -1,6 +1,6 @@
 # 📈 eToro & Market Data Integration
 
-Tags: #etoro #market-data #alpha-vantage #portfolio #circuit-breaker
+Tags: #etoro #market-data #yahoo-finance #portfolio #circuit-breaker
 
 ## Overview
 
@@ -9,7 +9,7 @@ Two external data sources power the investment side of the app:
 | Service | Purpose | Module |
 |---|---|---|
 | **eToro Public API** | A user's live portfolio (social-trading data) + instrument metadata | `services/etoro.py`, `services/instrument_resolver.py` |
-| **Alpha Vantage** | Stock quotes + OHLCV history | `services/market_data.py` |
+| **Yahoo Finance** (`yfinance`) | Stock quotes + daily history | `services/market_data.py` |
 
 Both are wrapped with a **circuit breaker**, **LRU+TTL cache**, and **mock-data fallback** so the app never hard-fails. See [[11 - Fault Tolerance]] and [[12 - Cache Service]].
 
@@ -165,21 +165,22 @@ Before any live call, `etoro_credential_problem()` detects unusable credentials 
 
 ---
 
-## Market Data — Alpha Vantage (`services/market_data.py`)
+## Market Data — Yahoo Finance (`services/market_data.py`)
 
-**Base URL:** `https://www.alphavantage.co/query`
+Quotes come from **Yahoo Finance** via the `yfinance` library — **no API key, no fixed daily quota**. `yfinance` is synchronous, so each call runs in a worker thread (`asyncio.to_thread`) to keep the service async.
 
-| Endpoint | Function | Notes |
+| Endpoint | yfinance source | Notes |
 |---|---|---|
-| `GET /market/quote/{symbol}` | `GLOBAL_QUOTE` | Real-time quote; works on the free tier |
-| `GET /market/history/{symbol}` | `TIME_SERIES_DAILY` / `DIGITAL_CURRENCY_DAILY` | 30-day OHLCV; premium-gated → falls back to mock |
+| `GET /market/quote/{symbol}` | `Ticker.fast_info` | Real-time-ish quote (last price, prev close → change %, volume) |
+| `GET /market/history/{symbol}` | `Ticker.history(period=...)` | ~30-day daily closes; falls back to mock on error |
+
+> Crypto symbols (`BTC`, `ETH`, `XRP`, …) are auto-mapped to the Yahoo `-USD` convention.
 
 ### Guards (in order)
 1. **Mock mode** — `USE_MOCK_DATA=true` returns mock immediately.
 2. **Cache** — quotes 60 min, history 24 h (LRU + TTL).
-3. **Quota** — hard 25 req/day cap; exceeding → mock with `_fallback: quota_exceeded`.
-4. **Circuit breaker** — repeated failures open the breaker → mock.
-5. **Symbol/ID resolution** — accepts `ID_1234` or numeric IDs, resolved to a symbol first.
+3. **Circuit breaker** (`yahoo_finance`) — repeated failures open the breaker → mock.
+4. **Symbol/ID resolution** — accepts `ID_1234` or numeric IDs, resolved to a symbol first.
 
 > Quotes set `"source": "live"` or `"mock"` so the UI can label them honestly.
 
@@ -206,7 +207,7 @@ ETORO_USER_KEY=<user key (x-user-key)>
 ETORO_BASE_URL=https://public-api.etoro.com
 ETORO_ENV=demo                 # demo → /trading/info/demo/* for own-account calls
 ETORO_USERNAME=Aguero1010      # public profile whose portfolio is displayed
-ALPHA_VANTAGE_API_KEY=<key>
+# Market quotes use Yahoo Finance (yfinance) — no API key required
 USE_MOCK_DATA=true             # master switch for offline/demo mode
 ```
 

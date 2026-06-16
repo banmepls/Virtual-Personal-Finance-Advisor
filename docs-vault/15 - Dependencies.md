@@ -18,7 +18,8 @@ Tags: #dependencies #python #dart #requirements
 | **passlib[bcrypt]** | 1.7.4 | Password hashing |
 | **python-jose[cryptography]** | 3.3.0 | JWT creation and verification |
 | **hvac** | 2.1.0 | HashiCorp Vault Python client |
-| **httpx** | 0.28.1 | Async HTTP client (BT API, Alpha Vantage) |
+| **httpx** | 0.28.1 | Async HTTP client (eToro, BT API) |
+| **yfinance** | 0.2.51 | Yahoo Finance market quotes & history (no API key) |
 | **numpy** | 1.26.4 | Numerical arrays for ML features |
 | **scikit-learn** | 1.5.2 | IsolationForest + OneClassSVM |
 | **scipy** | 1.13.1 | Scientific computing support |
@@ -82,7 +83,7 @@ dependency_overrides:
 | Service | SDK/Protocol | Free Tier Limit |
 |---|---|---|
 | **Google Gemini** | `langchain-google-genai` | 15 RPM (free) |
-| **Alpha Vantage** | REST via `httpx` | **25 requests/day** |
+| **Yahoo Finance** | `yfinance` library | No API key, no fixed quota (unofficial) |
 | **eToro** | REST via `httpx` | Varies (public API) |
 | **BT PSD2** | REST via `httpx` | Sandbox (unlimited) / Production (regulated) |
 | **HashiCorp Vault** | `hvac` | Self-hosted |

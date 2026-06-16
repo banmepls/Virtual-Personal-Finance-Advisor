@@ -4,7 +4,7 @@ Tags: #fault-tolerance #circuit-breaker #cache #resilience
 
 ## Overview
 
-The system is designed to remain functional even when external APIs (eToro, Alpha Vantage) fail or are rate-limited. Three primary resilience patterns are used:
+The system is designed to remain functional even when external APIs (eToro, Yahoo Finance) fail or are rate-limited. Three primary resilience patterns are used:
 
 ```mermaid
 graph TD
@@ -65,7 +65,7 @@ result = await cb.call(lambda: httpx_client.get(url))
 Pre-registered on startup (appear in `/health` before first call):
 ```python
 get_circuit_breaker("etoro")
-get_circuit_breaker("alpha_vantage")
+get_circuit_breaker("yahoo_finance")
 ```
 
 ### Status in Health Endpoint
@@ -132,30 +132,13 @@ cache_stats() -> dict                     # {size, capacity}
 
 ---
 
-## 3. Alpha Vantage Quota Guard
+## 3. Market Data Resilience (Yahoo Finance)
 
-Alpha Vantage free tier: **25 requests/day**.
+Market quotes use **Yahoo Finance** (`yfinance`) — no API key and **no fixed daily quota**, so the former Alpha Vantage 25 req/day quota guard has been removed. Yahoo can still throttle (HTTP 429) or be briefly unavailable; that path is handled purely by the cache + circuit breaker:
 
-```python
-ALPHA_VANTAGE_DAILY_LIMIT = 25
-_av_daily_counter: dict[str, int] = {}   # {"YYYY-MM-DD": count}
-
-def av_quota_remaining() -> int:
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    return max(0, 25 - _av_daily_counter.get(today, 0))
-
-def av_quota_exceeded() -> bool:
-    return av_quota_remaining() == 0
-
-def av_increment_counter():
-    today = get_av_daily_key()
-    _av_daily_counter[today] = _av_daily_counter.get(today, 0) + 1
-```
-
-**Behavior when quota exceeded:**
-1. Circuit breaker prevents new Alpha Vantage calls
-2. Last cached stock quote is served from L1/L2 cache
-3. `/health` reports `exceeded: true`
+1. `yfinance` calls run in a worker thread, wrapped by the `yahoo_finance` circuit breaker
+2. On repeated failure the breaker opens → last cached quote is served from the LRU cache
+3. If nothing is cached, mock data is returned so the response never fails hard
 
 ---
 
@@ -184,9 +167,9 @@ backend:
 
 ## 5. Bulkhead Isolation
 
-eToro and Alpha Vantage modules are completely decoupled:
+eToro and Yahoo Finance modules are completely decoupled:
 - Separate circuit breakers per service
-- A failure in eToro does **not** affect Alpha Vantage or the bank integration
+- A failure in eToro does **not** affect Yahoo Finance or the bank integration
 - Each service has independent fallback (mock data / cached data)
 
 ---
@@ -196,7 +179,7 @@ eToro and Alpha Vantage modules are completely decoupled:
 | Failure Scenario | System Response |
 |---|---|
 | eToro API down | Circuit breaker opens; mock portfolio data served |
-| Alpha Vantage rate limit (25/day) | Quota guard trips; serve cached quotes |
+| Yahoo Finance throttled/unavailable | Circuit breaker opens; serve cached quotes (else mock) |
 | BT PSD2 API unavailable | HTTP 503 returned; user can use demo mode |
 | HashiCorp Vault unreachable | `FALLBACK_MASTER_KEY` env var used (dev only) |
 | PostgreSQL down | HTTP 500; health shows `status: "degraded"` |

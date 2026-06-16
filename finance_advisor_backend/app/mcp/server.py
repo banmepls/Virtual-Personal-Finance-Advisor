@@ -59,7 +59,7 @@ async def get_stock_price(symbol: str) -> dict:
     except Exception as e:
         logger.warning(f"[MCP] get_stock_price({symbol}) failed: {e}")
         return {"error": f"Could not fetch a price for '{symbol}'. "
-                         "The symbol may be invalid or the market-data limit was reached."}
+                         "The symbol may be invalid or market data is temporarily unavailable."}
 
 @mcp_server.tool()
 async def get_market_sentiment() -> dict:

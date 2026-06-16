@@ -92,7 +92,7 @@ MOCK_ETORO_INSTRUMENTS = [
 ]
 
 
-# ── Alpha Vantage mock data ───────────────────────────────────────────────────
+# ── Market data mock (quotes & history) ───────────────────────────────────────
 
 def mock_stock_quote(symbol: str) -> dict:
     """Returns a mock stock quote for any symbol."""

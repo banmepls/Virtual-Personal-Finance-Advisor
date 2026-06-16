@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     # Pre-register circuit breakers so they appear in /health from the start
     from app.core.circuit_breaker import get_circuit_breaker
     get_circuit_breaker("etoro")
-    get_circuit_breaker("alpha_vantage")
+    get_circuit_breaker("yahoo_finance")
 
     # Warm up ML models (will auto-train on synthetic data on first call)
     logger.info("🧠 ML models ready (lazy init — train on first /anomaly/analyze call)")
@@ -44,7 +44,7 @@ app = FastAPI(
     title="Virtual Finance Advisor API",
     description=(
         "Backend for the Virtual Personal Finance Advisor. "
-        "Integrates eToro, Alpha Vantage, ML anomaly detection, and AI Tori agent."
+        "Integrates eToro, Yahoo Finance, ML anomaly detection, and AI Tori agent."
     ),
     version="1.0.0",
     lifespan=lifespan,

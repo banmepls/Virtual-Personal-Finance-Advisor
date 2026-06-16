@@ -97,7 +97,6 @@ class HealthResponse(BaseModel):
     status: str
     circuit_breakers: list[dict]
     cache_stats: dict
-    alpha_vantage_quota: dict
     timestamp: datetime
 
 

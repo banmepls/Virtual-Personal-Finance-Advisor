@@ -169,7 +169,7 @@ Tags: #api #endpoints #rest
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/market/quote/{symbol}` | Real-time stock quote (Alpha Vantage) |
+| `GET` | `/market/quote/{symbol}` | Real-time stock quote (Yahoo Finance) |
 | `GET` | `/market/history/{symbol}` | OHLCV history |
 
 ---
@@ -186,10 +186,9 @@ Tags: #api #endpoints #rest
   "status": "healthy",
   "circuit_breakers": [
     { "name": "etoro", "state": "CLOSED", "failure_count": 0, "last_failure_time": 0.0 },
-    { "name": "alpha_vantage", "state": "CLOSED", "failure_count": 0, "last_failure_time": 0.0 }
+    { "name": "yahoo_finance", "state": "CLOSED", "failure_count": 0, "last_failure_time": 0.0 }
   ],
   "cache_stats": { "size": 12, "capacity": 256, "db_connected": true },
-  "alpha_vantage_quota": { "daily_limit": 25, "remaining": 23, "exceeded": false },
   "timestamp": "2026-06-07T13:00:00Z"
 }
 ```

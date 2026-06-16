@@ -37,7 +37,7 @@ mcp_server = FastMCP("Tori Financial Assistant")
 |---|---|---|
 | `get_my_portfolio` | `() → dict` | Fetches the current live portfolio from eToro |
 | `get_all_instruments` | `() → list` | Returns all known eToro instruments |
-| `get_stock_price` | `(symbol: str) → dict` | Real-time quote via Alpha Vantage |
+| `get_stock_price` | `(symbol: str) → dict` | Real-time quote via Yahoo Finance |
 | `get_market_sentiment` | `() → dict` | Hardcoded market sentiment summary |
 
 ### Bank / spending (read the already-synced BT transactions in the DB)
@@ -117,7 +117,7 @@ sequenceDiagram
     participant Gemini as Google Gemini LLM
     participant MCP as MCP Server
     participant eToro as eToro API
-    participant AV as Alpha Vantage
+    participant AV as Yahoo Finance
 
     Tori->>Gemini: "What's my portfolio performance?"
     Gemini-->>Tori: Tool call: get_my_portfolio()

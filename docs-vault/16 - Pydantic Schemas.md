@@ -119,7 +119,6 @@ class HealthResponse(BaseModel):
     status: str                     # "healthy" | "degraded"
     circuit_breakers: list[dict]    # [{name, state, failure_count, ...}]
     cache_stats: dict               # {size, capacity, db_connected}
-    alpha_vantage_quota: dict       # {daily_limit, remaining, exceeded}
     timestamp: datetime
 ```
 

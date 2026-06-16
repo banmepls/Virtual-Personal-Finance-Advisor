@@ -1,7 +1,7 @@
 # Virtual Personal Finance Advisor — Raport Tehnic și de Reziliență
 
 ## 1. Introducere și Justificare
-Sistemul a fost conceput pentru a gestiona date financiare critice într-un mediu distribuit, unde dependențele externe (eToro API, Alpha Vantage) pot eșua oricând. Lansarea eToro Public APIs ne-a permis trecerea la o arhitectură orientată pe AI (Agentic Workflow), cu scopul de a oferi investitorilor de retail o perspectivă clară asupra portofoliilor, fără zgomotul platformelor clasice de social trading. 
+Sistemul a fost conceput pentru a gestiona date financiare critice într-un mediu distribuit, unde dependențele externe (eToro API, Yahoo Finance) pot eșua oricând. Lansarea eToro Public APIs ne-a permis trecerea la o arhitectură orientată pe AI (Agentic Workflow), cu scopul de a oferi investitorilor de retail o perspectivă clară asupra portofoliilor, fără zgomotul platformelor clasice de social trading. 
 
 **De ce "Fără Execuție"?**
 Aplicația este strict educațională și un suport decizional ("Human in the Loop"). Lipsa execuției automate protejează capitalul de posibile halucinații LLM.
@@ -17,21 +17,21 @@ graph TD
     FastAPI --> Cache[[LRU + DB Cache Layer]]
     FastAPI --> Vault[[HashiCorp Vault]]
     
-    MCP --> AlphaVantage[Alpha Vantage API]
+    MCP --> YahooFinance[Yahoo Finance API]
     MCP --> eToro[eToro API]
     FastAPI --> ML[Voting Ensemble ML]
 ```
 
 ### Mecanisme de Reziliență:
-1. **Bulkhead Isolation:** Modulele eToro și Alpha Vantage sunt decuplate; eșecul unuia nu afectează sistemul.
+1. **Bulkhead Isolation:** Modulele eToro și Yahoo Finance sunt decuplate; eșecul unuia nu afectează sistemul.
 2. **Circuit Breaker (`app/core/circuit_breaker.py`):** Previne spam-ul de endpoint-uri moarte. Un eșec de 5 ori deschide circuitul și trece în "fail-fast" pentru 60 de secunde.
-3. **Graceful Degradation with Caching:** Cererile `market_data` pică direct pe un LRU Cache în RAM sau DB if Alpha Vantage depășește limita de cereri (429 Rate Limit).
+3. **Graceful Degradation with Caching:** Cererile `market_data` pică direct pe un LRU Cache în RAM (TTL 60 min pentru cotații, 24 h pentru istoric) sau pe Mock Data dacă Yahoo Finance răspunde cu erori ori dacă circuitul este deschis.
 
 ## 3. Strategia de Gestiune a Defectelor (Case Studies)
 
-### 3.1 Rate Limit Exceeded (Alpha Vantage 25 req/zi)
-- **Defect:** Alpha Vantage impune un prag de 25 interogări/zi la nivel de cont free.
-- **Implementare:** Modulul `CacheService` interceptează orice request de tip cotație înainte de `httpx`. Un counter memorează numărul de apeluri. Dacă depășește pragul sau dacă circuitul este deschis, sistemul servește ultima cotație valabilă reținută din baza PostgreSQL sau din Mock Data.
+### 3.1 Indisponibilitate / Throttling Yahoo Finance
+- **Defect:** Yahoo Finance nu necesită cheie API și nu impune o cotă fixă zilnică, însă poate throttla (HTTP 429) sau deveni temporar indisponibil.
+- **Implementare:** Apelurile `yfinance` (sincrone) sunt rulate într-un thread separat și protejate de Circuit Breaker. La eșecuri repetate circuitul se deschide, iar sistemul servește ultima cotație din LRU Cache sau, în lipsa ei, Mock Data — fără a bloca restul aplicației.
 
 ### 3.2 Latență Rețea & Conexiune DB 
 - **Defect:** Baza de date Postgres pe WSL cade, sau API instabil.
@@ -56,7 +56,7 @@ Dacă scorul depășește un treshold (sau 2 din 3 semnalează "TRUE"), sistemul
 
 ## 5. Agentul AI conversațional (Tori) și MCP
 Utilizăm Model Context Protocol via `FastMCP` pentru a mapa funcții de citire ale serviciului core Python spre Tools LangChain. 
-- Modelele mari (Gemini 1.5 Flash via `langchain-google-genai` instalat și conectat) sunt invocate generând streaming responses direct în clientul Flutter. 
+- Modelul (Gemini 3.1 Flash Lite via `langchain-google-genai` instalat și conectat) este invocat ca agent ReAct LangGraph, returnând răspunsul complet către clientul Flutter. 
 - Istoricul discuțiilor se preia asincron din PostgreSQL, translatând `role: user` în structurile suportate de model.
 
 ## 6. Implementare Software Frontend
@@ -64,4 +64,4 @@ Flutter Mobile/Desktop a fost configurat pentru a citi din API. Endpoint-urile d
 Aplicația are stări de retry pentru backend downtime, semnalizând când comunicarea este imposibilă `Connection Refused` versus `Timeout`.
 
 ## 7. Concluzii și Studiu Rezultate
-Construcția acestui advisor a adus laolaltă siguranța (Vault + AES256), inteligența algoritmică pasivă (Ensemble ML), consilierea activă (Tori via Gemini) și execuția asincronă defensivă (Circuit Breakers + Caching). Acest mix asigură un instrument extrem de performant, protejat de limitările tradiționale API Rate Limit (care blocau frecvent alte abordări financiare Python simple).
+Construcția acestui advisor a adus laolaltă siguranța (Vault + AES256), inteligența algoritmică pasivă (Ensemble ML), consilierea activă (Tori via Gemini) și execuția asincronă defensivă (Circuit Breakers + Caching). Acest mix asigură un instrument extrem de performant, protejat de indisponibilitatea surselor externe prin Circuit Breakers și caching (eliminând totodată dependența de cote zilnice rigide de tip API key).

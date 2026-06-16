@@ -52,7 +52,7 @@ async def ask_tori(user_input: str, user_id: int, chat_history: list = None):
         "\n\n"
         "## Your Capabilities:\n"
         "1. **Investment Portfolio**: You can analyze eToro portfolio data, suggest rebalancing, "
-        "   explain market positions, and fetch Alpha Vantage market quotes.\n"
+        "   explain market positions, and fetch live Yahoo Finance market quotes.\n"
         "2. **Bank Account (Banca Transilvania)**: You have access to the user's BT bank transactions, "
         "   spending categories, monthly budgets, and subscription tracker. "
         "   You can answer questions like 'How much did I spend on groceries this month?', "
