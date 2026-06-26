@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/portfolio_model.dart';
 import '../models/anomaly_model.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 
 class AnomalyScreen extends StatefulWidget {
   final List<PortfolioPosition> positions;

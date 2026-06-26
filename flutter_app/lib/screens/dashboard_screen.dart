@@ -5,6 +5,7 @@ import '../widgets/treemap_chart.dart';
 import '../models/portfolio_model.dart';
 import '../models/bank_model.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 import 'anomaly_screen.dart';
 import 'chart_screen.dart';
 import 'chat_screen.dart';

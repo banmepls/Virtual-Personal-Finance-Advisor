@@ -172,6 +172,23 @@ class _BankScreenState extends State<BankScreen> {
     return confirmed ?? false;
   }
 
+  Future<void> _disconnect() async {
+    if (await _confirmDisconnect()) {
+      setState(() => _loading = true);
+      try {
+        await apiService.disconnectBank();
+        if (!mounted) return;
+        await _loadData();
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Disconnect failed: $e'), backgroundColor: _red),
+        );
+      }
+    }
+  }
+
   Future<void> _sync() async {
     setState(() => _syncing = true);
     try {
