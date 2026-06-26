@@ -144,15 +144,15 @@ class _DashboardScreenState extends State<DashboardScreen>
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: const Color(0xFFF6F8FA),
       appBar: _selectedIndex == 0
           ? AppBar(
-              backgroundColor: const Color(0xFF161B22),
+              backgroundColor: const Color(0xFFFFFFFF),
               elevation: 0,
               title: Text(
                 'Virtual Finance Advisor',
                 style: GoogleFonts.inter(
-                  color: Colors.white,
+                  color: const Color(0xFF1F2328),
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
                 ),
@@ -161,7 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 _buildSourceBadge(),
                 IconButton(
                   icon: const Icon(Icons.account_circle_outlined,
-                      color: Color(0xFF8B949E)),
+                      color: Color(0xFF656D76)),
                   tooltip: 'Profile',
                   onPressed: _showProfileSheet,
                 ),
@@ -173,22 +173,22 @@ class _DashboardScreenState extends State<DashboardScreen>
       // in-progress input survive switching tabs.
       body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: const Color(0xFF161B22),
-        indicatorColor: const Color(0xFF58A6FF).withOpacity(0.2),
+        backgroundColor: const Color(0xFFFFFFFF),
+        indicatorColor: const Color(0xFF0969DA).withOpacity(0.15),
         selectedIndex: _selectedIndex,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         onDestinationSelected: (i) => setState(() => _selectedIndex = i),
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.home_outlined, color: Color(0xFF8B949E)),
-            selectedIcon: const Icon(Icons.home, color: Color(0xFF58A6FF)),
+            icon: const Icon(Icons.home_outlined, color: Color(0xFF656D76)),
+            selectedIcon: const Icon(Icons.home, color: Color(0xFF0969DA)),
             label: 'Home',
           ),
           NavigationDestination(
             icon: const Icon(Icons.account_balance_outlined,
-                color: Color(0xFF8B949E)),
+                color: Color(0xFF656D76)),
             selectedIcon: const Icon(Icons.account_balance,
-                color: Color(0xFF58A6FF)),
+                color: Color(0xFF0969DA)),
             label: 'Bank',
           ),
           // ── CENTER: Tori AI ──────────────────────────────────────────────
@@ -197,7 +197,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1F6FEB), Color(0xFF58A6FF)],
+                  colors: [Color(0xFF0969DA), Color(0xFF218BFF)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -209,14 +209,14 @@ class _DashboardScreenState extends State<DashboardScreen>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF58A6FF), Color(0xFF79C0FF)],
+                  colors: [Color(0xFF0969DA), Color(0xFF54AEFF)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF58A6FF),
+                    color: Color(0xFF0969DA),
                     blurRadius: 12,
                     spreadRadius: 1,
                   ),
@@ -228,16 +228,16 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           NavigationDestination(
             icon: const Icon(Icons.savings_outlined,
-                color: Color(0xFF8B949E)),
+                color: Color(0xFF656D76)),
             selectedIcon: const Icon(Icons.savings,
-                color: Color(0xFF58A6FF)),
+                color: Color(0xFF0969DA)),
             label: 'Money',
           ),
           NavigationDestination(
             icon: const Icon(Icons.analytics_outlined,
-                color: Color(0xFF8B949E)),
+                color: Color(0xFF656D76)),
             selectedIcon: const Icon(Icons.analytics,
-                color: Color(0xFF58A6FF)),
+                color: Color(0xFF0969DA)),
             label: 'Analytics',
           ),
         ],
@@ -248,18 +248,18 @@ class _DashboardScreenState extends State<DashboardScreen>
   // ── Tab 2: Money hub — Budget / Subscriptions / Expenses ──────────────────
   Widget _buildMoneyHub() {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: const Color(0xFFF6F8FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         title: Text('Money',
             style: GoogleFonts.inter(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+                color: const Color(0xFF1F2328), fontWeight: FontWeight.w700, fontSize: 18)),
         bottom: TabBar(
           controller: _moneyTab,
-          indicatorColor: const Color(0xFF58A6FF),
-          labelColor: const Color(0xFF58A6FF),
-          unselectedLabelColor: const Color(0xFF8B949E),
+          indicatorColor: const Color(0xFF0969DA),
+          labelColor: const Color(0xFF0969DA),
+          unselectedLabelColor: const Color(0xFF656D76),
           labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
           tabs: const [
             Tab(text: 'Budget', icon: Icon(Icons.pie_chart, size: 18)),
@@ -282,18 +282,18 @@ class _DashboardScreenState extends State<DashboardScreen>
   // ── Tab 3: Analytics hub — Charts / Anomaly ───────────────────────────────
   Widget _buildAnalyticsHub() {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: const Color(0xFFF6F8FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         title: Text('Analytics',
             style: GoogleFonts.inter(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+                color: const Color(0xFF1F2328), fontWeight: FontWeight.w700, fontSize: 18)),
         bottom: TabBar(
           controller: _analyticsTab,
-          indicatorColor: const Color(0xFF58A6FF),
-          labelColor: const Color(0xFF58A6FF),
-          unselectedLabelColor: const Color(0xFF8B949E),
+          indicatorColor: const Color(0xFF0969DA),
+          labelColor: const Color(0xFF0969DA),
+          unselectedLabelColor: const Color(0xFF656D76),
           labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
           tabs: const [
             Tab(text: 'Charts', icon: Icon(Icons.candlestick_chart, size: 18)),
@@ -315,7 +315,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildHomeView() {
     return RefreshIndicator(
       onRefresh: _loadHome,
-      color: const Color(0xFF58A6FF),
+      color: const Color(0xFF0969DA),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -326,7 +326,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           if (_portfolio != null && _portfolio!.positions.isNotEmpty) ...[
             Text('Investments',
                 style: GoogleFonts.inter(
-                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                    color: const Color(0xFF1F2328), fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
             _buildMiniChart(),
             const SizedBox(height: 16),
@@ -351,20 +351,20 @@ class _DashboardScreenState extends State<DashboardScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1F6FEB).withOpacity(0.30),
-            const Color(0xFF161B22),
+            const Color(0xFF0969DA).withOpacity(0.15),
+            const Color(0xFFFFFFFF),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: const Color(0xFFD0D7DE)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Your Money',
-              style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13)),
+              style: GoogleFonts.inter(color: const Color(0xFF656D76), fontSize: 13)),
           const SizedBox(height: 20),
           // ── Row 1: Investments ───────────────────────────────────────────
           Row(
@@ -373,15 +373,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF58A6FF).withOpacity(0.15),
+                  color: const Color(0xFF0969DA).withOpacity(0.10),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.show_chart, color: Color(0xFF58A6FF), size: 20),
+                child: const Icon(Icons.show_chart, color: Color(0xFF0969DA), size: 20),
               ),
               const SizedBox(width: 12),
               Text('Investments',
                   style: GoogleFonts.inter(
-                      color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                      color: const Color(0xFF1F2328), fontSize: 15, fontWeight: FontWeight.w600)),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -389,20 +389,20 @@ class _DashboardScreenState extends State<DashboardScreen>
                   Text(
                     hasInv ? '\$${invValue.toStringAsFixed(2)}' : '—',
                     style: GoogleFonts.inter(
-                        color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                        color: const Color(0xFF1F2328), fontSize: 18, fontWeight: FontWeight.w800),
                   ),
                   if (hasInv)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(isPos ? Icons.trending_up : Icons.trending_down,
-                            color: isPos ? const Color(0xFF3FB950) : const Color(0xFFF85149),
+                            color: isPos ? const Color(0xFF1A7F37) : const Color(0xFFCF222E),
                             size: 14),
                         const SizedBox(width: 4),
                         Text(
                           '${isPos ? "+" : ""}${pnlPct.toStringAsFixed(2)}%',
                           style: GoogleFonts.inter(
-                              color: isPos ? const Color(0xFF3FB950) : const Color(0xFFF85149),
+                              color: isPos ? const Color(0xFF1A7F37) : const Color(0xFFCF222E),
                               fontSize: 12,
                               fontWeight: FontWeight.w600),
                         ),
@@ -414,7 +414,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(color: Color(0xFF30363D), height: 1),
+            child: Divider(color: Color(0xFFD0D7DE), height: 1),
           ),
           // ── Row 2: Bank ──────────────────────────────────────────────────
           Row(
@@ -423,15 +423,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3FB950).withOpacity(0.15),
+                  color: const Color(0xFF1A7F37).withOpacity(0.10),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.account_balance, color: Color(0xFF3FB950), size: 19),
+                child: const Icon(Icons.account_balance, color: Color(0xFF1A7F37), size: 19),
               ),
               const SizedBox(width: 12),
               Text('Bank',
                   style: GoogleFonts.inter(
-                      color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                      color: const Color(0xFF1F2328), fontSize: 15, fontWeight: FontWeight.w600)),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -439,12 +439,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                   Text(
                     _bankBalance != null ? ron.format(_bankBalance) : '—',
                     style: GoogleFonts.inter(
-                        color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                        color: const Color(0xFF1F2328), fontSize: 18, fontWeight: FontWeight.w800),
                   ),
                   if (_monthSpend != null)
                     Text('${_monthSpend!.toStringAsFixed(0)} RON spent this month',
                         style: GoogleFonts.inter(
-                            color: const Color(0xFF8B949E), fontSize: 11)),
+                            color: const Color(0xFF656D76), fontSize: 11)),
                 ],
               ),
             ],
@@ -457,12 +457,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildQuickAccess() {
     // (icon, label, color, tab, subTab)
     final items = [
-      (Icons.account_balance, 'Bank', const Color(0xFF3FB950), 1, 0),
-      (Icons.savings, 'Budget', const Color(0xFFD29922), 3, 0),
-      (Icons.repeat, 'Subs', const Color(0xFFBC8CFF), 3, 1),
-      (Icons.auto_awesome, 'Expenses', const Color(0xFFF0883E), 3, 2),
-      (Icons.analytics, 'Analytics', const Color(0xFF58A6FF), 4, 0),
-      (Icons.smart_toy, 'Tori', const Color(0xFF1F6FEB), 2, 0),
+      (Icons.account_balance, 'Bank', const Color(0xFF1A7F37), 1, 0),
+      (Icons.savings, 'Budget', const Color(0xFF9A6700), 3, 0),
+      (Icons.repeat, 'Subs', const Color(0xFF8250DF), 3, 1),
+      (Icons.auto_awesome, 'Expenses', const Color(0xFFBF5700), 3, 2),
+      (Icons.analytics, 'Analytics', const Color(0xFF0969DA), 4, 0),
+      (Icons.smart_toy, 'Tori', const Color(0xFF0969DA), 2, 0),
     ];
     return SizedBox(
       height: 78,
@@ -477,9 +477,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             child: Container(
               width: 78,
               decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF30363D)),
+                border: Border.all(color: const Color(0xFFD0D7DE)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -494,7 +494,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   const SizedBox(height: 6),
                   Text(label,
                       style: GoogleFonts.inter(
-                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+                          color: const Color(0xFF1F2328), fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -508,18 +508,18 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: const Color(0xFFD0D7DE)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.show_chart, color: Color(0xFF8B949E), size: 22),
+          const Icon(Icons.show_chart, color: Color(0xFF656D76), size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Investment data is currently unavailable. Pull down to refresh.',
-              style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13),
+              style: GoogleFonts.inter(color: const Color(0xFF656D76), fontSize: 13),
             ),
           ),
         ],
@@ -530,7 +530,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   // ── Data-source badge + profile sheet ─────────────────────────────────────
   Widget _buildSourceBadge() {
     final live = _isLive;
-    final color = live ? const Color(0xFF238636) : const Color(0xFFD29922);
+    final color = live ? const Color(0xFF1A7F37) : const Color(0xFF9A6700);
     return Container(
       margin: const EdgeInsets.only(right: 4),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -558,7 +558,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   void _showProfileSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF161B22),
+      backgroundColor: const Color(0xFFFFFFFF),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
@@ -574,8 +574,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     width: 48,
                     height: 48,
                     decoration: const BoxDecoration(
-                        color: Color(0xFF21262D), shape: BoxShape.circle),
-                    child: const Icon(Icons.person, color: Color(0xFF58A6FF)),
+                        color: Color(0xFFE8ECF1), shape: BoxShape.circle),
+                    child: const Icon(Icons.person, color: Color(0xFF0969DA)),
                   ),
                   const SizedBox(width: 14),
                   Column(
@@ -583,26 +583,26 @@ class _DashboardScreenState extends State<DashboardScreen>
                     children: [
                       Text(apiService.username ?? 'Guest',
                           style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: const Color(0xFF1F2328),
                               fontSize: 16,
                               fontWeight: FontWeight.w700)),
                       Text(
                           _isLive ? 'Live data connected' : 'Demo data mode',
                           style: GoogleFonts.inter(
-                              color: const Color(0xFF8B949E), fontSize: 12)),
+                              color: const Color(0xFF656D76), fontSize: 12)),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              const Divider(color: Color(0xFF30363D), height: 1),
+              const Divider(color: Color(0xFFD0D7DE), height: 1),
               const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.logout, color: Color(0xFFF85149)),
+                leading: const Icon(Icons.logout, color: Color(0xFFCF222E)),
                 title: Text('Log out',
                     style: GoogleFonts.inter(
-                        color: const Color(0xFFF85149),
+                        color: const Color(0xFFCF222E),
                         fontSize: 15,
                         fontWeight: FontWeight.w600)),
                 onTap: _confirmLogout,
@@ -619,14 +619,14 @@ class _DashboardScreenState extends State<DashboardScreen>
     if (positions.isEmpty) return const SizedBox();
 
     const colors = [
-      Color(0xFF58A6FF),
-      Color(0xFF3FB950),
-      Color(0xFFD29922),
-      Color(0xFFBC8CFF),
-      Color(0xFFF0883E),
-      Color(0xFFFF4C8B),
-      Color(0xFF39C5CF),
-      Color(0xFF8DDB8C),
+      Color(0xFF0969DA),
+      Color(0xFF1A7F37),
+      Color(0xFF9A6700),
+      Color(0xFF8250DF),
+      Color(0xFFBF5700),
+      Color(0xFFCF222E),
+      Color(0xFF0E8A84),
+      Color(0xFF2DA44E),
     ];
 
     final tiles = positions.asMap().entries.map((e) {
@@ -642,16 +642,16 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: const Color(0xFFD0D7DE)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Allocation',
               style: GoogleFonts.inter(
-                  color: const Color(0xFF8B949E), fontSize: 12)),
+                  color: const Color(0xFF656D76), fontSize: 12)),
           const SizedBox(height: 10),
           TreemapChart(tiles: tiles, height: 220),
         ],
@@ -664,9 +664,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: const Color(0xFFD0D7DE)),
       ),
       child: Row(
         children: [
@@ -674,14 +674,14 @@ class _DashboardScreenState extends State<DashboardScreen>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFF21262D),
+              color: const Color(0xFFE8ECF1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: Text(
                 pos.symbol.substring(0, pos.symbol.length > 2 ? 2 : pos.symbol.length),
                 style: GoogleFonts.inter(
-                    color: const Color(0xFF58A6FF),
+                    color: const Color(0xFF0969DA),
                     fontSize: 13,
                     fontWeight: FontWeight.w700),
               ),
@@ -694,14 +694,14 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 Text(pos.name,
                     style: GoogleFonts.inter(
-                        color: Colors.white,
+                        color: const Color(0xFF1F2328),
                         fontSize: 14,
                         fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 Text('${pos.quantity.toStringAsFixed(2)} @ \$${pos.avgBuyPrice.toStringAsFixed(2)}',
                     style: GoogleFonts.inter(
-                        color: const Color(0xFF8B949E), fontSize: 12)),
+                        color: const Color(0xFF656D76), fontSize: 12)),
               ],
             ),
           ),
@@ -711,7 +711,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               Text(
                 '\$${pos.currentValue.toStringAsFixed(2)}',
                 style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: const Color(0xFF1F2328),
                     fontSize: 14,
                     fontWeight: FontWeight.w600),
               ),
@@ -719,8 +719,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 '${pos.isProfit ? "+" : ""}\$${pos.unrealizedPnl.toStringAsFixed(2)}',
                 style: GoogleFonts.inter(
                   color: pos.isProfit
-                      ? const Color(0xFF3FB950)
-                      : const Color(0xFFF85149),
+                      ? const Color(0xFF1A7F37)
+                      : const Color(0xFFCF222E),
                   fontSize: 12,
                 ),
               ),
@@ -736,14 +736,14 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.wifi_off, color: Color(0xFF8B949E), size: 48),
+          const Icon(Icons.wifi_off, color: Color(0xFF656D76), size: 48),
           const SizedBox(height: 12),
           Text('Backend unavailable',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+              style: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 16)),
           const SizedBox(height: 8),
           Text(_error ?? '',
               style: GoogleFonts.inter(
-                  color: const Color(0xFF8B949E), fontSize: 12),
+                   color: const Color(0xFF656D76), fontSize: 12),
               textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -752,7 +752,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               _loadHome();
             },
             style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF238636)),
+                backgroundColor: const Color(0xFF1A7F37)),
             child: const Text('Retry'),
           ),
         ],

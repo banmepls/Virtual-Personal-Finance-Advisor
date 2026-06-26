@@ -107,14 +107,14 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: const Color(0xFFF6F8FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         title: Text(
           'Tori AI Advisor',
           style: GoogleFonts.inter(
-            color: Colors.white,
+            color: const Color(0xFF1F2328),
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -140,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF58A6FF)),
+                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0969DA)),
               ),
             ),
           _buildSuggestions(),
@@ -183,12 +183,12 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isUser ? const Color(0xFF1F6FEB) : const Color(0xFF21262D),
+          color: isUser ? const Color(0xFF0969DA) : const Color(0xFFEEF1F5),
           borderRadius: BorderRadius.circular(16).copyWith(
             bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(16),
             bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(0),
           ),
-          border: Border.all(color: const Color(0xFF30363D)),
+          border: Border.all(color: const Color(0xFFD0D7DE)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,9 +202,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return MarkdownBody(
       data: text,
       styleSheet: MarkdownStyleSheet(
-        p: GoogleFonts.inter(color: Colors.white, fontSize: 15),
-        strong: GoogleFonts.inter(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-        listBullet: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+        p: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15),
+        strong: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15, fontWeight: FontWeight.bold),
+        listBullet: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15),
       ),
     );
   }
@@ -228,9 +228,9 @@ class _ChatScreenState extends State<ChatScreen> {
         itemBuilder: (context, index) {
           final text = suggestions[index];
           return ActionChip(
-            label: Text(text, style: GoogleFonts.inter(color: Colors.white, fontSize: 13)),
-            backgroundColor: const Color(0xFF21262D),
-            side: const BorderSide(color: Color(0xFF30363D)),
+            label: Text(text, style: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 13)),
+            backgroundColor: const Color(0xFFEEF1F5),
+            side: const BorderSide(color: Color(0xFFD0D7DE)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             onPressed: () {
               _controller.text = text;
@@ -246,25 +246,25 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        border: Border(top: BorderSide(color: const Color(0xFF30363D))),
+        color: const Color(0xFFFFFFFF),
+        border: Border(top: BorderSide(color: const Color(0xFFD0D7DE))),
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _controller,
-              style: GoogleFonts.inter(color: Colors.white),
+              style: GoogleFonts.inter(color: const Color(0xFF1F2328)),
               decoration: InputDecoration(
                 hintText: 'Ask Tori something...',
-                hintStyle: GoogleFonts.inter(color: const Color(0xFF8B949E)),
+                hintStyle: GoogleFonts.inter(color: const Color(0xFF656D76)),
                 border: InputBorder.none,
               ),
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send, color: Color(0xFF58A6FF)),
+            icon: const Icon(Icons.send, color: Color(0xFF0969DA)),
             onPressed: _sendMessage,
           ),
         ],
