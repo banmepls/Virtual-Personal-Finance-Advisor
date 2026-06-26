@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -19,7 +20,7 @@ class EmptyState extends StatelessWidget {
     required this.message,
     this.actionLabel,
     this.onAction,
-    this.accent = const Color(0xFF58A6FF),
+    this.accent = AppColors.primary,
   });
 
   @override
@@ -42,13 +43,13 @@ class EmptyState extends StatelessWidget {
           Text(
             title,
             style: GoogleFonts.inter(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             message,
-            style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13, height: 1.5),
+            style: GoogleFonts.inter(color: AppColors.muted, fontSize: 13, height: 1.5),
             textAlign: TextAlign.center,
           ),
           if (actionLabel != null && onAction != null) ...[

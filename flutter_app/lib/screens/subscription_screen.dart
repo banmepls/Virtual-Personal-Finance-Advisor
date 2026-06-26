@@ -116,11 +116,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Total Monthly Subscriptions',
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
+                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _purple.withOpacity(0.2),
+                  color: _purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text('${_subscriptions.length} active',
@@ -133,17 +133,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Text(
             '${_monthlyTotal.toStringAsFixed(2)} RON/mo',
             style: GoogleFonts.inter(
-                color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
+                color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
           Text(
             '≈ ${Money.ronCompact(_monthlyTotal * 12)}/year',
-            style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 12),
           Text(
             '💡 Review regularly — unused subscriptions cost money!',
-            style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
           ),
         ],
       ),
@@ -177,7 +177,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               children: [
                 Text(sub.merchant,
                     style: GoogleFonts.inter(
-                        color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                        color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 3),
@@ -187,10 +187,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _chip(sub.category, _purple),
-                    _chip(sub.frequency, const Color(0xFF8B949E)),
+                    _chip(sub.frequency, AppColors.muted),
                     if (sub.lastCharge.isNotEmpty)
                       Text('Last: ${sub.lastCharge}',
-                          style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 11)),
+                          style: GoogleFonts.inter(color: AppColors.muted, fontSize: 11)),
                   ],
                 ),
               ],
@@ -205,7 +205,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     color: _red, fontSize: 14, fontWeight: FontWeight.w700),
               ),
               Text('RON/mo',
-                  style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 11)),
+                  style: GoogleFonts.inter(color: AppColors.muted, fontSize: 11)),
             ],
           ),
         ],
@@ -228,14 +228,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFF8B949E), size: 48),
+          const Icon(Icons.error_outline, color: AppColors.muted, size: 48),
           const SizedBox(height: 12),
           Text('Failed to load subscriptions',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _load,
-            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+            style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: Colors.white),
             child: const Text('Retry'),
           ),
         ],

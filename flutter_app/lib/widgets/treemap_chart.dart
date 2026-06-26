@@ -8,6 +8,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
 
 class TreemapTile {
   final String label;
@@ -45,7 +46,7 @@ class TreemapChart extends StatelessWidget {
         height: height,
         child: Center(
           child: Text('No data',
-              style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 12)),
+              style: GoogleFonts.inter(color: AppColors.muted, fontSize: 12)),
         ),
       );
     }
@@ -127,10 +128,10 @@ class TreemapChart extends StatelessWidget {
   }
 
   static Color _contrastColor(Color bg) {
-    // Relative luminance → pick black or white text for readability.
+    // Relative luminance → pick primary text or white for readability.
     final luminance =
         (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue) / 255.0;
-    return luminance > 0.6 ? const Color(0xFF0D1117) : Colors.white;
+    return luminance > 0.6 ? AppColors.textPrimary : Colors.white;
   }
 
   // ── Squarified treemap layout ────────────────────────────────────────────

@@ -12,6 +12,7 @@ class AppColors {
   static const border = Color(0xFFD0D7DE);   // hairline borders
   static const primary = Color(0xFF0969DA);  // accent blue (darker for light bg)
   static const muted = Color(0xFF656D76);    // secondary text
+  static const chipBg = Color(0xFFEEF1F5);   // light grey for chips/bubbles
 
   static const textPrimary = Color(0xFF1F2328);   // primary text on light
   static const textSecondary = Color(0xFF656D76); // secondary text on light

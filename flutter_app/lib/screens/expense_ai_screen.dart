@@ -229,7 +229,7 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
         children: [
           Text('Spending by Category',
               style: GoogleFonts.inter(
-                  color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                  color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
           TreemapChart(tiles: tiles, height: 240),
         ],
@@ -253,7 +253,7 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
         children: [
           Text('Breakdown',
               style: GoogleFonts.inter(
-                  color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                  color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           ...entries.asMap().entries.map((entry) {
             final i = entry.key;
@@ -268,10 +268,10 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
                       decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
                   const SizedBox(width: 10),
                   Expanded(child: Text(c.key,
-                      style: GoogleFonts.inter(color: Colors.white, fontSize: 13))),
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13))),
                   Text('${c.value.toStringAsFixed(0)} RON',
                       style: GoogleFonts.inter(
-                          color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(width: 8),
                   SizedBox(
                     width: 38,
@@ -295,14 +295,14 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1F6FEB).withOpacity(0.15),
+            AppColors.primary.withOpacity(0.15),
             _surface,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F6FEB).withOpacity(0.4)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,7 +313,7 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
               const SizedBox(width: 8),
               Text('Tori\'s Analysis',
                   style: GoogleFonts.inter(
-                      color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                      color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
               const Spacer(),
               if (!_loadingInsight)
                 TextButton.icon(
@@ -380,10 +380,10 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
     return MarkdownBody(
       data: text,
       styleSheet: MarkdownStyleSheet(
-        p: GoogleFonts.inter(color: Colors.white70, fontSize: 13, height: 1.5),
-        listBullet: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
+        p: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+        listBullet: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
         strong: GoogleFonts.inter(
-            color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+            color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -395,11 +395,11 @@ class _ExpenseAIScreenState extends State<ExpenseAIScreen> {
         children: [
           const Icon(Icons.error_outline, color: _muted, size: 48),
           const SizedBox(height: 12),
-          Text('Failed to load expenses', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+          Text('Failed to load expenses', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadCategories,
-            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+            style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: Colors.white),
             child: const Text('Retry'),
           ),
         ],

@@ -146,42 +146,30 @@ class _BankScreenState extends State<BankScreen> {
     }
   }
 
-  Future<void> _disconnect() async {
+  Future<bool> _confirmDisconnect() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: _surface,
-        title: const Text('Disconnect BT Account',
-            style: TextStyle(color: Colors.white)),
-        content: const Text(
+        title: Text('Disconnect BT Account',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: Text(
           'This will clear the stored connection. You can reconnect via sandbox auto-connect or by logging in through the browser.',
-          style: TextStyle(color: Color(0xFF8B949E)),
+          style: TextStyle(color: _muted),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF8B949E))),
+            child: Text('Cancel', style: TextStyle(color: _muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Disconnect', style: TextStyle(color: Color(0xFFF85149))),
+            child: const Text('Disconnect', style: TextStyle(color: AppColors.red)),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
-    setState(() => _loading = true);
-    try {
-      await apiService.disconnectBank();
-      if (!mounted) return;
-      await _loadData();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Disconnect failed: $e'), backgroundColor: _red),
-      );
-    }
+    return confirmed ?? false;
   }
 
   Future<void> _sync() async {
@@ -282,7 +270,7 @@ class _BankScreenState extends State<BankScreen> {
           Expanded(
             child: Text('Banca Transilvania',
                 style: GoogleFonts.inter(
-                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
+                    color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 17),
                 overflow: TextOverflow.ellipsis),
           ),
           const SizedBox(width: 8),
@@ -311,7 +299,7 @@ class _BankScreenState extends State<BankScreen> {
                 tooltip: 'Sync from BT',
               ),
         IconButton(
-          icon: const Icon(Icons.link_off, color: Color(0xFF8B949E)),
+          icon: const Icon(Icons.link_off, color: AppColors.muted),
           onPressed: _disconnect,
           tooltip: 'Disconnect / Reconnect',
         ),

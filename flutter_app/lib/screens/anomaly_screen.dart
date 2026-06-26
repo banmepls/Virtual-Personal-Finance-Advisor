@@ -82,30 +82,30 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
           children: [
             Text('Anomaly Detection',
                 style: GoogleFonts.inter(
-                    color: const Color(0xFF1F2328), fontSize: 20, fontWeight: FontWeight.w700)),
+                    color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(
               'Ensemble of Isolation Forest + Autoencoder + One-Class SVM',
-              style: GoogleFonts.inter(color: const Color(0xFF656D76), fontSize: 12),
+              style: GoogleFonts.inter(color: AppColors.muted, fontSize: 12),
             ),
             const SizedBox(height: 16),
             if (widget.positions.isEmpty)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFFFF),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFD0D7DE)),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Color(0xFF656D76), size: 20),
+                    const Icon(Icons.info_outline, color: AppColors.muted, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Load your portfolio first — open Home to fetch positions, then come back to analyze.',
                         style: GoogleFonts.inter(
-                            color: const Color(0xFF656D76), fontSize: 13, height: 1.4),
+                            color: AppColors.muted, fontSize: 13, height: 1.4),
                       ),
                     ),
                   ],
@@ -125,7 +125,7 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
                       : const Icon(Icons.radar),
                   label: Text(_loading ? 'Analyzing...' : 'Re-analyze Portfolio'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0969DA),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -138,25 +138,25 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFCF222E).withOpacity(0.1),
+                  color: AppColors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFCF222E).withOpacity(0.4)),
+                  border: Border.all(color: AppColors.red.withOpacity(0.4)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Color(0xFFCF222E), size: 18),
+                    const Icon(Icons.error_outline, color: AppColors.red, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(_error!,
                           style: GoogleFonts.inter(
-                              color: const Color(0xFFCF222E), fontSize: 13)),
+                              color: AppColors.red, fontSize: 13)),
                     ),
                     if (widget.positions.isNotEmpty)
                       TextButton(
                         onPressed: _loading ? null : _analyze,
                         child: Text('Retry',
                             style: GoogleFonts.inter(
-                                color: const Color(0xFF0969DA),
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.w600)),
                       ),
                   ],
@@ -183,12 +183,12 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
         gradient: LinearGradient(
           colors: isAnomaly
               ? [
-                  const Color(0xFFCF222E).withOpacity(0.2),
-                  const Color(0xFFFFFFFF)
+                  AppColors.red.withOpacity(0.2),
+                  AppColors.surface
                 ]
               : [
-                  const Color(0xFF1A7F37).withOpacity(0.2),
-                  const Color(0xFFFFFFFF)
+                  AppColors.green.withOpacity(0.2),
+                  AppColors.surface
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -196,8 +196,8 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isAnomaly
-              ? const Color(0xFFCF222E).withOpacity(0.5)
-              : const Color(0xFF1A7F37).withOpacity(0.5),
+              ? AppColors.red.withOpacity(0.5)
+              : AppColors.green.withOpacity(0.5),
         ),
       ),
       child: Column(
@@ -207,14 +207,14 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
             children: [
               Icon(
                 isAnomaly ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-                color: isAnomaly ? const Color(0xFFCF222E) : const Color(0xFF1A7F37),
+                color: isAnomaly ? AppColors.red : AppColors.green,
                 size: 28,
               ),
               const SizedBox(width: 10),
               Text(
                 isAnomaly ? 'ANOMALY DETECTED' : 'PORTFOLIO NORMAL',
                 style: GoogleFonts.inter(
-                  color: isAnomaly ? const Color(0xFFCF222E) : const Color(0xFF1A7F37),
+                  color: isAnomaly ? AppColors.red : AppColors.green,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -223,7 +223,7 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
           ),
           const SizedBox(height: 12),
           _buildScoreBar(
-              'Ensemble Score', r.weightedAvgScore, const Color(0xFF0969DA)),
+              'Ensemble Score', r.weightedAvgScore, AppColors.primary),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -232,7 +232,7 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
                   _confidenceColor(r.confidence)),
               _buildBadge(
                   'Score: ${(r.weightedAvgScore * 100).toStringAsFixed(1)}%',
-                  const Color(0xFF656D76)),
+                  AppColors.muted),
             ],
           ),
         ],
@@ -244,16 +244,16 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FA),
+        color: AppColors.bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD0D7DE)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Model Breakdown',
               style: GoogleFonts.inter(
-                  color: const Color(0xFF1F2328), fontSize: 14, fontWeight: FontWeight.w600)),
+                  color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           _buildModelRow('🌲 Isolation Forest', r.isolationScore, 0.35),
           const SizedBox(height: 10),
@@ -274,11 +274,11 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
           children: [
             Text(name,
                 style: GoogleFonts.inter(
-                    color: const Color(0xFF656D76), fontSize: 12)),
+                    color: AppColors.muted, fontSize: 12)),
             Text(
               '${(score * 100).toStringAsFixed(1)}%  (weight: ${(weight * 100).toInt()}%)',
               style: GoogleFonts.inter(
-                  color: const Color(0xFF1F2328), fontSize: 12, fontWeight: FontWeight.w600),
+                  color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -295,13 +295,13 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
         if (label.isNotEmpty)
           Text(label,
               style: GoogleFonts.inter(
-                  color: const Color(0xFF656D76), fontSize: 12)),
+                  color: AppColors.muted, fontSize: 12)),
         const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: score.clamp(0.0, 1.0),
-            backgroundColor: const Color(0xFFE8ECF1),
+            backgroundColor: AppColors.chipBg,
             color: color,
             minHeight: 8,
           ),
@@ -325,19 +325,19 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
   }
 
   Color _scoreColor(double score) {
-    if (score < 0.33) return const Color(0xFF1A7F37);
-    if (score < 0.66) return const Color(0xFF9A6700);
-    return const Color(0xFFCF222E);
+    if (score < 0.33) return AppColors.green;
+    if (score < 0.66) return AppColors.gold;
+    return AppColors.red;
   }
 
   Color _confidenceColor(String confidence) {
     switch (confidence) {
       case 'HIGH':
-        return const Color(0xFF1A7F37);
+        return AppColors.green;
       case 'MEDIUM':
-        return const Color(0xFF9A6700);
+        return AppColors.gold;
       default:
-        return const Color(0xFF656D76);
+        return AppColors.muted;
     }
   }
 }

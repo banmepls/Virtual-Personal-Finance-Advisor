@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 import '../widgets/generative_ui.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -17,6 +18,14 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, String>> _messages = [];
   bool _loading = false;
+
+  static const _primary = AppColors.primary;
+  static const _bg = AppColors.bg;
+  static const _surface = AppColors.surface;
+  static const _border = AppColors.border;
+  static const _muted = AppColors.muted;
+  static const _textPrimary = AppColors.textPrimary;
+  static const _chipBg = AppColors.chipBg;
 
   @override
   void initState() {
@@ -107,14 +116,14 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA),
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: _surface,
         elevation: 0,
         title: Text(
           'Tori AI Advisor',
           style: GoogleFonts.inter(
-            color: const Color(0xFF1F2328),
+            color: _textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -140,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0969DA)),
+                child: CircularProgressIndicator(strokeWidth: 2, color: _primary),
               ),
             ),
           _buildSuggestions(),
@@ -160,7 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (match.start > lastMatchEnd) {
         final text = content.substring(lastMatchEnd, match.start).trim();
         if (text.isNotEmpty) {
-          children.add(_buildMarkdownText(text));
+          children.add(_buildMarkdownText(text, isUser));
         }
       }
       final jsonStr = match.group(1) ?? '';
@@ -173,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (lastMatchEnd < content.length) {
       final text = content.substring(lastMatchEnd).trim();
       if (text.isNotEmpty) {
-        children.add(_buildMarkdownText(text));
+        children.add(_buildMarkdownText(text, isUser));
       }
     }
 
@@ -183,28 +192,29 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isUser ? const Color(0xFF0969DA) : const Color(0xFFEEF1F5),
+          color: isUser ? _primary : _chipBg,
           borderRadius: BorderRadius.circular(16).copyWith(
             bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(16),
             bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(0),
           ),
-          border: Border.all(color: const Color(0xFFD0D7DE)),
+          border: Border.all(color: _border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: children.isEmpty ? [_buildMarkdownText(content)] : children,
+          children: children.isEmpty ? [_buildMarkdownText(content, isUser)] : children,
         ),
       ),
     );
   }
 
-  Widget _buildMarkdownText(String text) {
+  Widget _buildMarkdownText(String text, bool isUser) {
+    final textColor = isUser ? Colors.white : _textPrimary;
     return MarkdownBody(
       data: text,
       styleSheet: MarkdownStyleSheet(
-        p: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15),
-        strong: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15, fontWeight: FontWeight.bold),
-        listBullet: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15),
+        p: GoogleFonts.inter(color: textColor, fontSize: 15),
+        strong: GoogleFonts.inter(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
+        listBullet: GoogleFonts.inter(color: textColor, fontSize: 15),
       ),
     );
   }
@@ -228,9 +238,9 @@ class _ChatScreenState extends State<ChatScreen> {
         itemBuilder: (context, index) {
           final text = suggestions[index];
           return ActionChip(
-            label: Text(text, style: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 13)),
-            backgroundColor: const Color(0xFFEEF1F5),
-            side: const BorderSide(color: Color(0xFFD0D7DE)),
+            label: Text(text, style: GoogleFonts.inter(color: _textPrimary, fontSize: 13)),
+            backgroundColor: _chipBg,
+            side: const BorderSide(color: _border),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             onPressed: () {
               _controller.text = text;
@@ -246,25 +256,25 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        border: Border(top: BorderSide(color: const Color(0xFFD0D7DE))),
+        color: _surface,
+        border: Border(top: BorderSide(color: _border)),
       ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _controller,
-              style: GoogleFonts.inter(color: const Color(0xFF1F2328)),
+              style: GoogleFonts.inter(color: _textPrimary),
               decoration: InputDecoration(
                 hintText: 'Ask Tori something...',
-                hintStyle: GoogleFonts.inter(color: const Color(0xFF656D76)),
+                hintStyle: GoogleFonts.inter(color: _muted),
                 border: InputBorder.none,
               ),
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send, color: Color(0xFF0969DA)),
+            icon: const Icon(Icons.send, color: _primary),
             onPressed: _sendMessage,
           ),
         ],

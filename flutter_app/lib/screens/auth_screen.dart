@@ -94,7 +94,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA),
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -107,7 +107,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 Text(
                   _isRegister ? 'Create Account' : 'Welcome Back',
                   style: GoogleFonts.inter(
-                      color: const Color(0xFF1F2328), fontSize: 26, fontWeight: FontWeight.bold),
+                      color: AppColors.textPrimary, fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -154,19 +154,19 @@ class _AuthScreenState extends State<AuthScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFCF222E).withOpacity(0.1),
+                      color: AppColors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFCF222E).withOpacity(0.4)),
+                      border: Border.all(color: AppColors.red.withOpacity(0.4)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.error_outline,
-                            color: Color(0xFFCF222E), size: 18),
+                            color: AppColors.red, size: 18),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(_error!,
                               style: GoogleFonts.inter(
-                                  color: const Color(0xFFCF222E), fontSize: 13)),
+                                  color: AppColors.red, fontSize: 13)),
                         ),
                       ],
                     ),
@@ -179,8 +179,9 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: ElevatedButton(
                     onPressed: _loading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A7F37),
-                      disabledBackgroundColor: const Color(0xFF1A7F37).withOpacity(0.5),
+                      backgroundColor: AppColors.green,
+                      disabledBackgroundColor: AppColors.green.withOpacity(0.5),
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -193,7 +194,6 @@ class _AuthScreenState extends State<AuthScreen> {
                         : Text(
                             _isRegister ? 'Sign Up' : 'Sign In',
                             style: GoogleFonts.inter(
-                                color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -249,7 +249,7 @@ class _AuthScreenState extends State<AuthScreen> {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
-      style: GoogleFonts.inter(color: const Color(0xFF1F2328), fontSize: 15),
+      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.inter(color: _muted),

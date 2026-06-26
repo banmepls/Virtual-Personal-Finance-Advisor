@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/portfolio_model.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 
 class ChartScreen extends StatefulWidget {
   final List<PortfolioPosition> positions;
@@ -19,6 +20,16 @@ class _ChartScreenState extends State<ChartScreen> {
   bool _loadingQuote = false;
   bool _loadingHistory = false;
   String? _error;
+
+  static const _primary = AppColors.primary;
+  static const _bg = AppColors.bg;
+  static const _surface = AppColors.surface;
+  static const _border = AppColors.border;
+  static const _muted = AppColors.muted;
+  static const _textPrimary = AppColors.textPrimary;
+  static const _chipBg = AppColors.chipBg;
+  static const _green = AppColors.green;
+  static const _red = AppColors.red;
 
   @override
   void initState() {
@@ -79,7 +90,7 @@ class _ChartScreenState extends State<ChartScreen> {
         children: [
           Text('Market Charts',
               style: GoogleFonts.inter(
-                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                  color: _textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           // Symbol selector
           SizedBox(
@@ -99,15 +110,15 @@ class _ChartScreenState extends State<ChartScreen> {
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: selected ? const Color(0xFF1F6FEB) : const Color(0xFF21262D),
+                      color: selected ? _primary : _chipBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: selected ? const Color(0xFF58A6FF) : const Color(0xFF30363D)),
+                          color: selected ? _primary : _border),
                     ),
                     child: Text(
                       pos.symbol,
                       style: GoogleFonts.inter(
-                        color: selected ? Colors.white : const Color(0xFF8B949E),
+                        color: selected ? Colors.white : _muted,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -123,9 +134,9 @@ class _ChartScreenState extends State<ChartScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
+                color: _surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF30363D)),
+                border: Border.all(color: _border),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -135,10 +146,10 @@ class _ChartScreenState extends State<ChartScreen> {
                     children: [
                       Text(_selectedSymbol ?? '',
                           style: GoogleFonts.inter(
-                              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                              color: _textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
                       Text(_quote!['source'] == 'mock' ? '📦 Mock Data' : '🔴 Live',
                           style: GoogleFonts.inter(
-                              color: const Color(0xFF8B949E), fontSize: 11)),
+                              color: _muted, fontSize: 11)),
                     ],
                   ),
                   Column(
@@ -147,14 +158,14 @@ class _ChartScreenState extends State<ChartScreen> {
                       Text(
                         '\$${(_quote!['price'] as num).toStringAsFixed(2)}',
                         style: GoogleFonts.inter(
-                            color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                            color: _textPrimary, fontSize: 22, fontWeight: FontWeight.w700),
                       ),
                       Text(
                         _quote!['change_percent'] ?? '0%',
                         style: GoogleFonts.inter(
                           color: (_quote!['change_percent'] ?? '').toString().contains('-')
-                              ? const Color(0xFFF85149)
-                              : const Color(0xFF3FB950),
+                              ? _red
+                              : _green,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -166,31 +177,32 @@ class _ChartScreenState extends State<ChartScreen> {
             ),
             const SizedBox(height: 16),
           ] else if (!_loadingQuote) ...[
-            const Center(
-              child: Text('Price data unavailable', style: TextStyle(color: Colors.grey)),
+            Center(
+              child: Text('Price data unavailable', style: TextStyle(color: _muted)),
             ),
             const SizedBox(height: 16),
           ],
           // Price chart
           Expanded(
             child: (_loadingQuote || _loadingHistory)
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF58A6FF)))
+                ? const Center(child: CircularProgressIndicator(color: _primary))
                 : _error != null
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.show_chart, color: Color(0xFF8B949E), size: 44),
+                        const Icon(Icons.show_chart, color: AppColors.muted, size: 44),
                         const SizedBox(height: 12),
                         Text('Could not load chart data',
-                            style: GoogleFonts.inter(color: Colors.white, fontSize: 15)),
+                            style: GoogleFonts.inter(color: _textPrimary, fontSize: 15)),
                         const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: _selectedSymbol == null
                               ? null
                               : () => _fetchQuote(_selectedSymbol!),
                           style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF238636)),
+                              backgroundColor: AppColors.green,
+                              foregroundColor: Colors.white),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -199,16 +211,16 @@ class _ChartScreenState extends State<ChartScreen> {
                 : Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF161B22),
+                      color: _surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF30363D)),
+                      border: Border.all(color: _border),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('30-Day Historical Trend',
                             style: GoogleFonts.inter(
-                                color: const Color(0xFF8B949E), fontSize: 12)),
+                                color: _muted, fontSize: 12)),
                         const SizedBox(height: 12),
                         Expanded(
                           child: LineChart(
@@ -216,11 +228,11 @@ class _ChartScreenState extends State<ChartScreen> {
                               gridData: FlGridData(
                                 show: true,
                                 getDrawingHorizontalLine: (v) => FlLine(
-                                  color: const Color(0xFF30363D),
+                                  color: _border,
                                   strokeWidth: 1,
                                 ),
                                 getDrawingVerticalLine: (v) => FlLine(
-                                  color: const Color(0xFF30363D),
+                                  color: _border,
                                   strokeWidth: 1,
                                 ),
                               ),
@@ -235,7 +247,7 @@ class _ChartScreenState extends State<ChartScreen> {
                                     getTitlesWidget: (v, meta) => Text(
                                       '\$${v.toStringAsFixed(0)}',
                                       style: GoogleFonts.inter(
-                                          color: const Color(0xFF8B949E), fontSize: 9),
+                                          color: _muted, fontSize: 9),
                                     ),
                                     reservedSize: 50,
                                   ),
@@ -248,12 +260,12 @@ class _ChartScreenState extends State<ChartScreen> {
                                 LineChartBarData(
                                   spots: _getHistorySpots(),
                                   isCurved: true,
-                                  color: const Color(0xFF58A6FF),
+                                  color: _primary,
                                   barWidth: 2,
                                   dotData: const FlDotData(show: false),
                                   belowBarData: BarAreaData(
                                     show: true,
-                                    color: const Color(0xFF1F6FEB).withOpacity(0.15),
+                                    color: _primary.withOpacity(0.10),
                                   ),
                                 ),
                               ],

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 
 class GenerativeWidgetBuilder {
   static Widget buildFromJson(String jsonString) {
@@ -29,11 +30,11 @@ class GenerativeWidgetBuilder {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF85149).withOpacity(0.1),
-        border: Border.all(color: const Color(0xFFF85149)),
+        color: AppColors.red.withOpacity(0.1),
+        border: Border.all(color: AppColors.red),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(msg, style: GoogleFonts.inter(color: const Color(0xFFF85149))),
+      child: Text(msg, style: GoogleFonts.inter(color: AppColors.red)),
     );
   }
 }
@@ -87,35 +88,35 @@ class _BudgetSliderWidgetState extends State<BudgetSliderWidget> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.tune, color: Color(0xFF58A6FF), size: 20),
+              const Icon(Icons.tune, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Adjust $category Budget',
-                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
             'Limit: ${_limit.toStringAsFixed(0)} RON',
-            style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 14),
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
           ),
           Slider(
             value: _limit,
             min: 0,
             max: 5000,
             divisions: 100,
-            activeColor: const Color(0xFF58A6FF),
-            inactiveColor: const Color(0xFF30363D),
+            activeColor: AppColors.primary,
+            inactiveColor: AppColors.border,
             onChanged: (val) {
               setState(() {
                 _limit = val;
@@ -128,12 +129,13 @@ class _BudgetSliderWidgetState extends State<BudgetSliderWidget> {
             child: ElevatedButton(
               onPressed: _isSaving ? null : _saveBudget,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _saved ? const Color(0xFF238636) : const Color(0xFF1F6FEB),
+                backgroundColor: _saved ? AppColors.green : AppColors.primary,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: _isSaving
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(_saved ? 'Saved!' : 'Save Changes', style: GoogleFonts.inter(color: Colors.white)),
+                  : Text(_saved ? 'Saved!' : 'Save Changes', style: GoogleFonts.inter()),
             ),
           )
         ],
@@ -157,9 +159,9 @@ class ReceiptWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF30363D)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,40 +172,40 @@ class ReceiptWidget extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: const Color(0xFF21262D),
+                    backgroundColor: AppColors.chipBg,
                     radius: 16,
-                    child: Text(merchant[0].toUpperCase(), style: GoogleFonts.inter(color: const Color(0xFF58A6FF), fontSize: 14, fontWeight: FontWeight.bold)),
+                    child: Text(merchant[0].toUpperCase(), style: GoogleFonts.inter(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
-                  Text(merchant, style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(merchant, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
-              Text('-${amount.toStringAsFixed(2)} RON', style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('-${amount.toStringAsFixed(2)} RON', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Color(0xFF30363D), height: 1),
+            child: Divider(color: AppColors.border, height: 1),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Date', style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13)),
-              Text(date, style: GoogleFonts.inter(color: Colors.white, fontSize: 13)),
+              Text('Date', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
+              Text(date, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Category', style: GoogleFonts.inter(color: const Color(0xFF8B949E), fontSize: 13)),
+              Text('Category', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3FB950).withOpacity(0.1),
+                  color: AppColors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(category, style: GoogleFonts.inter(color: const Color(0xFF3FB950), fontSize: 12)),
+                child: Text(category, style: GoogleFonts.inter(color: AppColors.green, fontSize: 12)),
               ),
             ],
           ),
@@ -268,10 +270,10 @@ class _ActionButtonWidgetState extends State<ActionButtonWidget> {
       child: ElevatedButton(
         onPressed: _running ? null : _run,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF21262D),
-          disabledBackgroundColor: const Color(0xFF21262D),
+          backgroundColor: AppColors.chipBg,
+          disabledBackgroundColor: AppColors.chipBg,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          side: const BorderSide(color: Color(0xFF30363D)),
+          side: const BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: _running
@@ -282,18 +284,18 @@ class _ActionButtonWidgetState extends State<ActionButtonWidget> {
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Color(0xFF58A6FF))),
+                          strokeWidth: 2, color: AppColors.primary)),
                   const SizedBox(width: 10),
                   Text('Working…',
                       style: GoogleFonts.inter(
-                          color: const Color(0xFF58A6FF),
+                          color: AppColors.primary,
                           fontSize: 15,
                           fontWeight: FontWeight.bold)),
                 ],
               )
             : Text(_done ? '✓ $label' : label,
                 style: GoogleFonts.inter(
-                    color: const Color(0xFF58A6FF),
+                    color: AppColors.primary,
                     fontSize: 15,
                     fontWeight: FontWeight.bold)),
       ),

@@ -69,7 +69,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
           backgroundColor: _surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Set Monthly Budget',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
+              style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -86,16 +86,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: _primary)),
                 ),
-                style: GoogleFonts.inter(color: Colors.white),
+                style: GoogleFonts.inter(color: AppColors.textPrimary),
                 items: _categories.map((c) => DropdownMenuItem(
-                  value: c, child: Text(c, style: GoogleFonts.inter(color: Colors.white)))).toList(),
+                  value: c, child: Text(c, style: GoogleFonts.inter(color: AppColors.textPrimary)))).toList(),
                 onChanged: (v) => setDialogState(() => selectedCategory = v!),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(color: Colors.white),
+                style: GoogleFonts.inter(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Limit (RON)',
                   labelStyle: GoogleFonts.inter(color: _muted),
@@ -269,7 +269,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _surface,
         title: Text('Delete budget?',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
         content: Text('Remove the ${b.category} budget for this month?',
             style: GoogleFonts.inter(color: _muted)),
         actions: [
@@ -350,7 +350,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               Expanded(
                 child: Text(b.category,
                     style: GoogleFonts.inter(
-                        color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                        color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
               ),
               Text('${b.spentAmount.toStringAsFixed(0)} / ${b.limitAmount.toStringAsFixed(0)} RON',
                   style: GoogleFonts.inter(color: _muted, fontSize: 12)),
@@ -366,7 +366,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               builder: (_, v, __) => LinearProgressIndicator(
                 value: v,
                 minHeight: 8,
-                backgroundColor: const Color(0xFF21262D),
+                backgroundColor: AppColors.chipBg,
                 valueColor: AlwaysStoppedAnimation<Color>(barColor),
               ),
             ),
@@ -399,10 +399,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
           const Icon(Icons.error_outline, color: _muted, size: 48),
           const SizedBox(height: 12),
           Text('Failed to load budgets',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16)),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: _load,
-              style: ElevatedButton.styleFrom(backgroundColor: _primary),
+              style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: Colors.white),
               child: const Text('Retry')),
         ],
       ),
