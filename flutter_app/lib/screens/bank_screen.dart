@@ -448,7 +448,7 @@ class _BankScreenState extends State<BankScreen> {
                 Text(
                   tx.merchantName,
                   style: GoogleFonts.inter(
-                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -503,7 +503,7 @@ class _BankScreenState extends State<BankScreen> {
           const Icon(Icons.wifi_off, color: _muted, size: 48),
           const SizedBox(height: 12),
           Text('Could not load bank data',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16)),
           const SizedBox(height: 8),
           Text(_error ?? '',
               style: GoogleFonts.inter(color: _muted, fontSize: 12),
@@ -530,7 +530,7 @@ class _BankScreenState extends State<BankScreen> {
             const Icon(Icons.account_balance, color: _primary, size: 20),
             const SizedBox(width: 8),
             Text('Banca Transilvania',
-                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 17)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -569,7 +569,7 @@ class _BankScreenState extends State<BankScreen> {
               ),
               const SizedBox(height: 24),
               Text('BT Sandbox Connected',
-                  style: GoogleFonts.inter(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               Text(
                 'Your bank connected successfully, but this test bank has no sample accounts to display.',
@@ -630,7 +630,7 @@ class _BankScreenState extends State<BankScreen> {
             const SizedBox(height: 24),
             Text('Connect Your Bank',
                 style: GoogleFonts.inter(
-                    color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Text(
               'Connect a bank account to track your spending, budgets and subscriptions. '

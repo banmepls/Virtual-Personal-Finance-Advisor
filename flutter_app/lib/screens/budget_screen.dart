@@ -292,7 +292,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
       await apiService.deleteBudget(b.budgetId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted ${b.category} budget'), backgroundColor: _surface),
+          SnackBar(
+              content: Text('Deleted ${b.category} budget',
+                  style: GoogleFonts.inter(color: AppColors.textPrimary)),
+              backgroundColor: _surface),
         );
       }
     } catch (e) {

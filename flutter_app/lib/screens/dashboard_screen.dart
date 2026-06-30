@@ -126,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final List<Widget> screens = [
       // ── Tab 0: Home (overview + investments) ──────────────────────────────
       _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF58A6FF)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : _error != null
               ? _buildError()
               : _buildHomeView(),

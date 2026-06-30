@@ -101,7 +101,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         gradient: LinearGradient(
           colors: [
             _purple.withOpacity(0.2),
-            const Color(0xFF161B22),
+            _surface,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
