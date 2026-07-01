@@ -1,0 +1,109 @@
+{
+  "F-01": {
+    "fault": "5x simulated HTTP 500 on Yahoo Finance",
+    "opened_at_failure": 5,
+    "health_snapshot_when_open": {
+      "name": "yahoo_finance",
+      "state": "OPEN",
+      "failure_count": 5,
+      "last_failure_time": 496275.812
+    },
+    "trace": [
+      {
+        "call": 1,
+        "phase": "fault_injected",
+        "cb_state": "CLOSED",
+        "failure_count": 1,
+        "result_source": "mock"
+      },
+      {
+        "call": 2,
+        "phase": "fault_injected",
+        "cb_state": "CLOSED",
+        "failure_count": 2,
+        "result_source": "mock"
+      },
+      {
+        "call": 3,
+        "phase": "fault_injected",
+        "cb_state": "CLOSED",
+        "failure_count": 3,
+        "result_source": "mock"
+      },
+      {
+        "call": 4,
+        "phase": "fault_injected",
+        "cb_state": "CLOSED",
+        "failure_count": 4,
+        "result_source": "mock"
+      },
+      {
+        "call": 5,
+        "phase": "fault_injected",
+        "cb_state": "OPEN",
+        "failure_count": 5,
+        "result_source": "mock"
+      },
+      {
+        "call": 6,
+        "phase": "fault_injected",
+        "cb_state": "OPEN",
+        "failure_count": 5,
+        "result_source": "mock"
+      },
+      {
+        "call": 7,
+        "phase": "fault_injected",
+        "cb_state": "OPEN",
+        "failure_count": 5,
+        "result_source": "mock"
+      }
+    ],
+    "recovery_trace": [
+      {
+        "probe": 1,
+        "cb_state_after": "HALF_OPEN",
+        "success_count": 1,
+        "result_source": "live"
+      },
+      {
+        "probe": 2,
+        "cb_state_after": "CLOSED",
+        "success_count": 2,
+        "result_source": "live"
+      }
+    ],
+    "final_state": "CLOSED"
+  },
+  "F-02": {
+    "fault": "DB unreachable during MCP tool calls",
+    "get_spending_summary": {
+      "raised": false,
+      "returned": {
+        "error": "Spending data is currently unavailable."
+      },
+      "graceful": true
+    },
+    "get_recent_transactions": {
+      "raised": false,
+      "returned_type": "list",
+      "graceful": true
+    },
+    "get_subscriptions": {
+      "raised": false,
+      "returned_type": "list",
+      "graceful": true
+    }
+  },
+  "F-03": {
+    "fault": "Vault unreachable at http://127.0.0.1:1",
+    "master_key_available": true,
+    "used_fallback": true,
+    "warning_logged": true,
+    "sample_warnings": [
+      "WARNING:app.core.vault: Using insecure fallback master key because Vault is unreachable!",
+      "ERROR:app.core.vault: Error communicating with Vault: HTTPConnectionPool(host='127.0.0.1', port=1): Max retries exceeded with url: /v1/auth/token/lookup-self (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=1): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
+      "WARNING:app.core.vault: Using insecure fallback master key because Vault is unreachable!"
+    ]
+  }
+}
